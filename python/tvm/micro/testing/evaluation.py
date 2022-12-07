@@ -27,7 +27,8 @@ from io import StringIO
 from pathlib import Path
 from contextlib import ExitStack
 import tempfile
-
+import shutil
+import random
 import tvm
 from tvm.relay.op.contrib import cmsisnn
 
@@ -115,6 +116,7 @@ def create_aot_session(
         if tune_logs is not None:
             stack.enter_context(tvm.autotvm.apply_history_best(tune_logs))
 
+        random.seed(0)
         lowered = tvm.relay.build(
             mod,
             target=target,
@@ -137,6 +139,9 @@ def create_aot_session(
             **(project_options or {}),
         },
     )
+    filepath = f"/home/guberti/old-tvm/vww/default_lib2.c"
+    shutil.copy(filepath, build_dir / "project/model/codegen/host/src/default_lib2.c")
+    print("Made a file copy")
     project.build()
     project.flash()
 
