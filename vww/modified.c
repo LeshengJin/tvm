@@ -29443,25 +29443,27 @@ __STATIC_FORCEINLINE int32_t gemm_1x1x1_reset_DFUIVCDS(int32_t *cc, int C_stride
 extern "C"
 #endif
 TVM_DLL int32_t tvmgen_default_fused_cast_subtract(void* args, int32_t* arg_type_ids, int32_t num_args, void* out_ret_value, int32_t* out_ret_tcode, void* resource_handle) {
-  void* arg_placeholder = (((TVMValue*)args)[0].v_handle);
-  int32_t arg_placeholder_code = arg_type_ids[0];
-  void* arg_T_subtract = (((TVMValue*)args)[1].v_handle);
-  int32_t arg_T_subtract_code = arg_type_ids[1];
-  void* placeholder = (((DLTensor*)arg_placeholder)[0].data);
-  void* arg_placeholder_shape = (((DLTensor*)arg_placeholder)[0].shape);
-  void* arg_placeholder_strides = (((DLTensor*)arg_placeholder)[0].strides);
-  int32_t dev_id = (((DLTensor*)arg_placeholder)[0].device.device_id);
-  void* T_subtract = (((DLTensor*)arg_T_subtract)[0].data);
-  void* arg_T_subtract_shape = (((DLTensor*)arg_T_subtract)[0].shape);
-  void* arg_T_subtract_strides = (((DLTensor*)arg_T_subtract)[0].strides);
-  if (!(arg_placeholder_strides == NULL)) {
+  void* arg_var_p0 = (((TVMValue*)args)[0].v_handle);
+  int32_t arg_var_p0_code = arg_type_ids[0];
+  void* arg_var_T_cast = (((TVMValue*)args)[1].v_handle);
+  int32_t arg_var_T_cast_code = arg_type_ids[1];
+  void* p0 = (((DLTensor*)arg_var_p0)[0].data);
+  void* arg_var_p0_shape = (((DLTensor*)arg_var_p0)[0].shape);
+  void* arg_var_p0_strides = (((DLTensor*)arg_var_p0)[0].strides);
+  int32_t dev_id = (((DLTensor*)arg_var_p0)[0].device.device_id);
+  void* T_cast = (((DLTensor*)arg_var_T_cast)[0].data);
+  void* arg_var_T_cast_shape = (((DLTensor*)arg_var_T_cast)[0].shape);
+  void* arg_var_T_cast_strides = (((DLTensor*)arg_var_T_cast)[0].strides);
+  if (!(arg_var_p0_strides == NULL)) {
   }
-  if (!(arg_T_subtract_strides == NULL)) {
+  if (!(arg_var_T_cast_strides == NULL)) {
   }
-  for (int32_t ax0_ax1_fused_ax2_fused = 0; ax0_ax1_fused_ax2_fused < 9216; ++ax0_ax1_fused_ax2_fused) {
-    for (int32_t ax3_inner = 0; ax3_inner < 3; ++ax3_inner) {
-      int32_t cse_var_1 = ((ax0_ax1_fused_ax2_fused * 3) + ax3_inner);
-      ((int16_t*)T_subtract)[cse_var_1] = (((int16_t)((int8_t*)placeholder)[cse_var_1]) - (int16_t)-128);
+  for (int32_t ax1 = 0; ax1 < 96; ++ax1) {
+    for (int32_t ax2 = 0; ax2 < 96; ++ax2) {
+      for (int32_t ax3 = 0; ax3 < 3; ++ax3) {
+        int32_t cse_var_1 = (((ax1 * 288) + (ax2 * 3)) + ax3);
+        ((int16_t*)T_cast)[cse_var_1] = ((int16_t)((int8_t*)p0)[cse_var_1]);
+      }
     }
   }
   return 0;
@@ -30473,55 +30475,55 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
     for (int32_t owo = 0; owo < 6; ++owo) {
       for (int32_t ohi = 0; ohi < 9; ++ohi) {
         for (int32_t ic = 0; ic < 3; ++ic) {
-          ((int16_t*)data_vec)[((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic)] = ((int16_t*)PadInput)[((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic)];
+          ((int16_t*)data_vec)[((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic)] = ((int16_t*)PadInput)[((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic)] + 128;
         }
         for (int32_t ic_1 = 0; ic_1 < 3; ++ic_1) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_1) + 3)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_1) + 3)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_1) + 3)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_1) + 3)] + 128;
         }
         for (int32_t ic_2 = 0; ic_2 < 3; ++ic_2) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_2) + 6)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_2) + 6)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_2) + 6)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_2) + 6)] + 128;
         }
         for (int32_t ic_3 = 0; ic_3 < 3; ++ic_3) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_3) + 9)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_3) + 9)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_3) + 9)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_3) + 9)] + 128;
         }
         for (int32_t ic_4 = 0; ic_4 < 3; ++ic_4) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_4) + 12)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_4) + 12)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_4) + 12)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_4) + 12)] + 128;
         }
         for (int32_t ic_5 = 0; ic_5 < 3; ++ic_5) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_5) + 15)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_5) + 15)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_5) + 15)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_5) + 15)] + 128;
         }
         for (int32_t ic_6 = 0; ic_6 < 3; ++ic_6) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_6) + 18)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_6) + 18)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_6) + 18)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_6) + 18)] + 128;
         }
         for (int32_t ic_7 = 0; ic_7 < 3; ++ic_7) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_7) + 21)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_7) + 21)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_7) + 21)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_7) + 21)] + 128;
         }
         for (int32_t ic_8 = 0; ic_8 < 3; ++ic_8) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_8) + 24)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_8) + 24)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_8) + 24)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_8) + 24)] + 128;
         }
         for (int32_t ic_9 = 0; ic_9 < 3; ++ic_9) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_9) + 27)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_9) + 27)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_9) + 27)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_9) + 27)] + 128;
         }
         for (int32_t ic_10 = 0; ic_10 < 3; ++ic_10) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_10) + 30)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_10) + 30)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_10) + 30)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_10) + 30)] + 128;
         }
         for (int32_t ic_11 = 0; ic_11 < 3; ++ic_11) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_11) + 33)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_11) + 33)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_11) + 33)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_11) + 33)] + 128;
         }
         for (int32_t ic_12 = 0; ic_12 < 3; ++ic_12) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_12) + 36)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_12) + 36)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_12) + 36)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_12) + 36)] + 128;
         }
         for (int32_t ic_13 = 0; ic_13 < 3; ++ic_13) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_13) + 39)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_13) + 39)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_13) + 39)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_13) + 39)] + 128;
         }
         for (int32_t ic_14 = 0; ic_14 < 3; ++ic_14) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_14) + 42)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_14) + 42)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_14) + 42)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_14) + 42)] + 128;
         }
         for (int32_t ic_15 = 0; ic_15 < 3; ++ic_15) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_15) + 45)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_15) + 45)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_15) + 45)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_15) + 45)] + 128;
         }
         for (int32_t ic_16 = 0; ic_16 < 3; ++ic_16) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_16) + 48)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_16) + 48)];
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_16) + 48)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_16) + 48)] + 128;
         }
       }
     }
