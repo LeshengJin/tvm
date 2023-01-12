@@ -30432,6 +30432,16 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
 }
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+static const int32_t __attribute__((section(".rodata.tvm"), aligned(16))) bias_8070086[8] = {
+    +0x000020ee, +0x00003212, +0x000005f0, +0x00002193, -0x0000426f, +0x00013726, +0x000027f0, +0x0000b2d8
+};
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
+#ifdef __cplusplus
 extern "C"
 #endif
 TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift_cast_add_clip_cast_clip_cast_s_8a376065fd35c245_(void* args, int32_t* arg_type_ids, int32_t num_args, void* out_ret_value, int32_t* out_ret_tcode, void* resource_handle) {
@@ -30467,7 +30477,7 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
     for (int32_t i2 = 0; i2 < 97; ++i2) {
       for (int32_t i3 = 0; i3 < 3; ++i3) {
         int32_t cse_var_1 = (i2 * 3);
-        ((int16_t*)PadInput)[(((i1 * 291) + cse_var_1) + i3)] = (((i1 < 96) && (i2 < 96)) ? ((int16_t*)placeholder)[(((i1 * 288) + cse_var_1) + i3)] : (int16_t)0);
+        ((int16_t*)PadInput)[(((i1 * 291) + cse_var_1) + i3)] = (((i1 < 96) && (i2 < 96)) ? ((int16_t*)placeholder)[(((i1 * 288) + cse_var_1) + i3)] : (int16_t) -128);
       }
     }
   }
@@ -30475,55 +30485,55 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
     for (int32_t owo = 0; owo < 6; ++owo) {
       for (int32_t ohi = 0; ohi < 9; ++ohi) {
         for (int32_t ic = 0; ic < 3; ++ic) {
-          ((int16_t*)data_vec)[((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic)] = ((int16_t*)PadInput)[((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic)] + 128;
+          ((int16_t*)data_vec)[((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic)] = ((int16_t*)PadInput)[((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic)];
         }
         for (int32_t ic_1 = 0; ic_1 < 3; ++ic_1) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_1) + 3)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_1) + 3)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_1) + 3)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_1) + 3)];
         }
         for (int32_t ic_2 = 0; ic_2 < 3; ++ic_2) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_2) + 6)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_2) + 6)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_2) + 6)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_2) + 6)];
         }
         for (int32_t ic_3 = 0; ic_3 < 3; ++ic_3) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_3) + 9)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_3) + 9)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_3) + 9)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_3) + 9)];
         }
         for (int32_t ic_4 = 0; ic_4 < 3; ++ic_4) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_4) + 12)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_4) + 12)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_4) + 12)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_4) + 12)];
         }
         for (int32_t ic_5 = 0; ic_5 < 3; ++ic_5) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_5) + 15)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_5) + 15)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_5) + 15)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_5) + 15)];
         }
         for (int32_t ic_6 = 0; ic_6 < 3; ++ic_6) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_6) + 18)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_6) + 18)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_6) + 18)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_6) + 18)];
         }
         for (int32_t ic_7 = 0; ic_7 < 3; ++ic_7) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_7) + 21)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_7) + 21)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_7) + 21)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_7) + 21)];
         }
         for (int32_t ic_8 = 0; ic_8 < 3; ++ic_8) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_8) + 24)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_8) + 24)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_8) + 24)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_8) + 24)];
         }
         for (int32_t ic_9 = 0; ic_9 < 3; ++ic_9) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_9) + 27)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_9) + 27)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_9) + 27)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_9) + 27)];
         }
         for (int32_t ic_10 = 0; ic_10 < 3; ++ic_10) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_10) + 30)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_10) + 30)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_10) + 30)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_10) + 30)];
         }
         for (int32_t ic_11 = 0; ic_11 < 3; ++ic_11) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_11) + 33)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_11) + 33)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_11) + 33)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_11) + 33)];
         }
         for (int32_t ic_12 = 0; ic_12 < 3; ++ic_12) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_12) + 36)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_12) + 36)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_12) + 36)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_12) + 36)];
         }
         for (int32_t ic_13 = 0; ic_13 < 3; ++ic_13) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_13) + 39)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_13) + 39)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_13) + 39)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_13) + 39)];
         }
         for (int32_t ic_14 = 0; ic_14 < 3; ++ic_14) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_14) + 42)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_14) + 42)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_14) + 42)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_14) + 42)];
         }
         for (int32_t ic_15 = 0; ic_15 < 3; ++ic_15) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_15) + 45)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_15) + 45)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_15) + 45)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_15) + 45)];
         }
         for (int32_t ic_16 = 0; ic_16 < 3; ++ic_16) {
-          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_16) + 48)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_16) + 48)] + 128;
+          ((int16_t*)data_vec)[(((((n_oho_fused * 2754) + (owo * 459)) + (ohi * 51)) + ic_16) + 48)] = ((int16_t*)PadInput)[(((((n_oho_fused * 2328) + (ohi * 291)) + (owo * 48)) + ic_16) + 48)];
         }
       }
     }
@@ -30792,14 +30802,14 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_138 = (cse_var_139 + 1);
           int32_t cse_var_137 = (((cse_var_140 + (ax2_outer * 64)) + (ax2_inner * 8)) + cse_var_139);
           int32_t cse_var_136 = (((cse_var_140 + (ax2_outer * 256)) + (ax3_outer * 64)) + (ax2_inner * 2));
-          int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)conv)[cse_var_136]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_139])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_139]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_139]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_139])) - 128;
+          int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)conv)[cse_var_136]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_139])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_139]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_139]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_139])) - 128;
           int32_t __2 = (__1) < (127) ? (__1) : (127);
           int8_t __3 = (int8_t)((__2) > (-128) ? (__2) : (-128));
           int8_t __4 = (int8_t)127;
           int8_t __5 = (__3) < (__4) ? (__3) : (__4);
           int8_t __6 = (int8_t)-128;
           ((int16_t*)T_subtract)[cse_var_137] = (((int16_t)((__5) > (__6) ? (__5) : (__6))) - (int16_t)-128);
-          int32_t __7 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_138])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])) - 128;
+          int32_t __7 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_138])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])) - 128;
           int32_t __8 = (__7) < (127) ? (__7) : (127);
           int8_t __9 = (int8_t)((__8) > (-128) ? (__8) : (-128));
           int8_t __10 = (__9) < (__4) ? (__9) : (__4);
@@ -30811,14 +30821,14 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_143 = (cse_var_144 + 1);
           int32_t cse_var_142 = (((cse_var_145 + (ax2_outer * 64)) + (ax2_inner_1 * 8)) + cse_var_144);
           int32_t cse_var_141 = (((cse_var_145 + (ax2_outer * 256)) + (ax3_outer * 64)) + (ax2_inner_1 * 2));
-          int32_t __11 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_141 + 16)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_144])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_144]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_144]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_144])) - 128;
+          int32_t __11 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_141 + 16)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_144])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_144]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_144]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_144])) - 128;
           int32_t __12 = (__11) < (127) ? (__11) : (127);
           int8_t __13 = (int8_t)((__12) > (-128) ? (__12) : (-128));
           int8_t __14 = (int8_t)127;
           int8_t __15 = (__13) < (__14) ? (__13) : (__14);
           int8_t __16 = (int8_t)-128;
           ((int16_t*)T_subtract)[(cse_var_142 + 384)] = (((int16_t)((__15) > (__16) ? (__15) : (__16))) - (int16_t)-128);
-          int32_t __17 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_141 + 17)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_143])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_143]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_143]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_143])) - 128;
+          int32_t __17 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_141 + 17)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_143])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_143]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_143]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_143])) - 128;
           int32_t __18 = (__17) < (127) ? (__17) : (127);
           int8_t __19 = (int8_t)((__18) > (-128) ? (__18) : (-128));
           int8_t __20 = (__19) < (__14) ? (__19) : (__14);
@@ -30830,14 +30840,14 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_148 = (cse_var_149 + 1);
           int32_t cse_var_147 = (((cse_var_150 + (ax2_outer * 64)) + (ax2_inner_2 * 8)) + cse_var_149);
           int32_t cse_var_146 = (((cse_var_150 + (ax2_outer * 256)) + (ax3_outer * 64)) + (ax2_inner_2 * 2));
-          int32_t __21 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_146 + 32)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_149])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_149]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_149]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_149])) - 128;
+          int32_t __21 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_146 + 32)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_149])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_149]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_149]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_149])) - 128;
           int32_t __22 = (__21) < (127) ? (__21) : (127);
           int8_t __23 = (int8_t)((__22) > (-128) ? (__22) : (-128));
           int8_t __24 = (int8_t)127;
           int8_t __25 = (__23) < (__24) ? (__23) : (__24);
           int8_t __26 = (int8_t)-128;
           ((int16_t*)T_subtract)[(cse_var_147 + 768)] = (((int16_t)((__25) > (__26) ? (__25) : (__26))) - (int16_t)-128);
-          int32_t __27 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_146 + 33)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_148])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_148]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_148]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_148])) - 128;
+          int32_t __27 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_146 + 33)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_148])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_148]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_148]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_148])) - 128;
           int32_t __28 = (__27) < (127) ? (__27) : (127);
           int8_t __29 = (int8_t)((__28) > (-128) ? (__28) : (-128));
           int8_t __30 = (__29) < (__24) ? (__29) : (__24);
@@ -30849,14 +30859,14 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_153 = (cse_var_154 + 1);
           int32_t cse_var_152 = (((cse_var_155 + (ax2_outer * 64)) + (ax2_inner_3 * 8)) + cse_var_154);
           int32_t cse_var_151 = (((cse_var_155 + (ax2_outer * 256)) + (ax3_outer * 64)) + (ax2_inner_3 * 2));
-          int32_t __31 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_151 + 48)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_154])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_154]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_154]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_154])) - 128;
+          int32_t __31 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_151 + 48)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_154])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_154]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_154]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_154])) - 128;
           int32_t __32 = (__31) < (127) ? (__31) : (127);
           int8_t __33 = (int8_t)((__32) > (-128) ? (__32) : (-128));
           int8_t __34 = (int8_t)127;
           int8_t __35 = (__33) < (__34) ? (__33) : (__34);
           int8_t __36 = (int8_t)-128;
           ((int16_t*)T_subtract)[(cse_var_152 + 1152)] = (((int16_t)((__35) > (__36) ? (__35) : (__36))) - (int16_t)-128);
-          int32_t __37 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_151 + 49)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_1)[cse_var_153])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_153]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_153]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_153])) - 128;
+          int32_t __37 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_151 + 49)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_153])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_153]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_153]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_153])) - 128;
           int32_t __38 = (__37) < (127) ? (__37) : (127);
           int8_t __39 = (int8_t)((__38) > (-128) ? (__38) : (-128));
           int8_t __40 = (__39) < (__34) ? (__39) : (__34);
