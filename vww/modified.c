@@ -30587,13 +30587,13 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
     for (int32_t kh = 0; kh < 3; ++kh) {
       for (int32_t kw = 0; kw < 3; ++kw) {
         for (int32_t oci = 0; oci < 2; ++oci) {
-          kernel_vec[((((oco * 54) + (kh * 18)) + (kw * 6)) + oci)] = ((int16_t*)kernel_3971177)[((((kh * 72) + (kw * 24)) + (oco * 2)) + oci)];
+          kernel_vec[((((oco * 54) + (kh * 18)) + (kw * 6)) + oci)] = ((int16_t*)fused_constant_0)[((((kh * 72) + (kw * 24)) + (oco * 2)) + oci)];
         }
         for (int32_t oci_1 = 0; oci_1 < 2; ++oci_1) {
-          kernel_vec[(((((oco * 54) + (kh * 18)) + (kw * 6)) + oci_1) + 2)] = ((int16_t*)kernel_3971177)[(((((kh * 72) + (kw * 24)) + (oco * 2)) + oci_1) + 8)];
+          kernel_vec[(((((oco * 54) + (kh * 18)) + (kw * 6)) + oci_1) + 2)] = ((int16_t*)fused_constant_0)[(((((kh * 72) + (kw * 24)) + (oco * 2)) + oci_1) + 8)];
         }
         for (int32_t oci_2 = 0; oci_2 < 2; ++oci_2) {
-          kernel_vec[(((((oco * 54) + (kh * 18)) + (kw * 6)) + oci_2) + 4)] = ((int16_t*)kernel_3971177)[(((((kh * 72) + (kw * 24)) + (oco * 2)) + oci_2) + 16)];
+          kernel_vec[(((((oco * 54) + (kh * 18)) + (kw * 6)) + oci_2) + 4)] = ((int16_t*)fused_constant_0)[(((((kh * 72) + (kw * 24)) + (oco * 2)) + oci_2) + 16)];
         }
       }
     }
