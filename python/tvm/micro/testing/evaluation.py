@@ -139,7 +139,8 @@ def create_aot_session(
             **(project_options or {}),
         },
     )
-    filepath = f"/home/guberti/old-tvm/vww/default_lib2.c"
+    filepath = f"/home/guberti/old-tvm/vww/modified.c"
+    #shutil.copy(build_dir / "project/model/codegen/host/src/default_lib2.c", filepath)
     shutil.copy(filepath, build_dir / "project/model/codegen/host/src/default_lib2.c")
     print("Made a file copy")
     project.build()
