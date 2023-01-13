@@ -30858,11 +30858,23 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
                                         ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_139]
                                     ) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_139]
                                 ) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_139])
-                            ) - 128;
-          int32_t requant_0 = __ssat(__1, 8);
+                            );
+          int32_t requant_0 = __ssat(__1 - 128, 8);
           ((int16_t*)T_subtract)[cse_var_137] = (((int16_t) requant_0) - (int16_t)-128);
-          int32_t __7 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_138])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])) - 128;
-          int32_t requant_1 = __ssat(__7, 8);
+
+          int32_t __7 = (
+                            (int32_t)(
+                                (
+                                    (
+                                        (
+                                            ((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) +
+                                            ((int64_t)((int32_t*)bias_8070086)[cse_var_138])
+                                        ) *
+                                        ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]
+                                    ) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]
+                                ) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])
+                            );
+          int32_t requant_1 = __ssat(__7 - 128, 8);
           ((int16_t*)T_subtract)[(cse_var_137 + 1)] = (((int16_t)requant_1) - (int16_t)-128);
         }
         for (int32_t ax2_inner_1 = 0; ax2_inner_1 < 8; ++ax2_inner_1) {
