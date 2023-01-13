@@ -30847,14 +30847,12 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_138 = (cse_var_139 + 1);
           int32_t cse_var_137 = (((cse_var_140 + (ax2_outer * 64)) + (ax2_inner * 8)) + cse_var_139);
           int32_t cse_var_136 = (((cse_var_140 + (ax2_outer * 256)) + (ax3_outer * 64)) + (ax2_inner * 2));
+          int64_t sum_0 = ((int64_t)((int32_t*)conv)[cse_var_136]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_139]);
           int32_t __1 = (
                             (int32_t) (
                                 (
                                     (
-                                        (
-                                            ((int64_t)((int32_t*)conv)[cse_var_136]) +
-                                            ((int64_t)((int32_t*)bias_8070086)[cse_var_139])
-                                        ) *
+                                        (sum_0) *
                                         ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_139]
                                     ) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_139]
                                 ) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_139])
@@ -30862,14 +30860,12 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t requant_0 = __ssat(__1 - 128, 8);
           ((int16_t*)T_subtract)[cse_var_137] = (((int16_t) requant_0) - (int16_t)-128);
 
+          int64_t sum_1 = ((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_138]);
           int32_t __7 = (
                             (int32_t)(
                                 (
                                     (
-                                        (
-                                            ((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) +
-                                            ((int64_t)((int32_t*)bias_8070086)[cse_var_138])
-                                        ) *
+                                        (sum_1) *
                                         ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]
                                     ) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]
                                 ) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])
