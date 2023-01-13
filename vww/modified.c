@@ -30847,18 +30847,23 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_138 = (cse_var_139 + 1);
           int32_t cse_var_137 = (((cse_var_140 + (ax2_outer * 64)) + (ax2_inner * 8)) + cse_var_139);
           int32_t cse_var_136 = (((cse_var_140 + (ax2_outer * 256)) + (ax3_outer * 64)) + (ax2_inner * 2));
-          int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)conv)[cse_var_136]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_139])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_139]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_139]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_139])) - 128;
-          int32_t __2 = (__1) < (127) ? (__1) : (127);
-          int8_t __3 = (int8_t)((__2) > (-128) ? (__2) : (-128));
-          int8_t __4 = (int8_t)127;
-          int8_t __5 = (__3) < (__4) ? (__3) : (__4);
-          int8_t __6 = (int8_t)-128;
-          ((int16_t*)T_subtract)[cse_var_137] = (((int16_t)((__5) > (__6) ? (__5) : (__6))) - (int16_t)-128);
+          int32_t __1 = (
+                            (int32_t) (
+                                (
+                                    (
+                                        (
+                                            ((int64_t)((int32_t*)conv)[cse_var_136]) +
+                                            ((int64_t)((int32_t*)bias_8070086)[cse_var_139])
+                                        ) *
+                                        ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_139]
+                                    ) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_139]
+                                ) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_139])
+                            ) - 128;
+          int32_t requant_0 = __ssat(__1, 8);
+          ((int16_t*)T_subtract)[cse_var_137] = (((int16_t) requant_0) - (int16_t)-128);
           int32_t __7 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_136 + 1)]) + ((int64_t)((int32_t*)bias_8070086)[cse_var_138])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])) - 128;
-          int32_t __8 = (__7) < (127) ? (__7) : (127);
-          int8_t __9 = (int8_t)((__8) > (-128) ? (__8) : (-128));
-          int8_t __10 = (__9) < (__4) ? (__9) : (__4);
-          ((int16_t*)T_subtract)[(cse_var_137 + 1)] = (((int16_t)((__10) > (__6) ? (__10) : (__6))) - (int16_t)-128);
+          int32_t requant_1 = __ssat(__7, 8);
+          ((int16_t*)T_subtract)[(cse_var_137 + 1)] = (((int16_t)requant_1) - (int16_t)-128);
         }
         for (int32_t ax2_inner_1 = 0; ax2_inner_1 < 8; ++ax2_inner_1) {
           int32_t cse_var_145 = (ax0_ax1_outer_fused * 1536);
