@@ -34022,6 +34022,78 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
   return 0;
 }
 
+static const float __attribute__((section(".rodata.tvm"), aligned(16))) scale_19774001[16] = {
+    0x1.f7da38p-115, 0x1.8af172p-116, 0x1.a11d4ap-120, 0x1.da0cdep-124, 0x1.ed70dep-125, 0x1.fe72eep-123, 0x1.9c6f06p-117, 0x1.a14884p-114,
+    0x1.dc58acp-124, 0x1.899598p-123, 0x1.92e09ep-122, 0x1.541228p-122, 0x1.228cd8p-114, 0x1.bd9a8ep-123, 0x1.751a8ap-117, 0x1.6526a4p-115
+};
+
+static const int32_t __attribute__((section(".rodata.tvm"), aligned(16))) bias_8643672[16] = {
+    +0x00006b58, -0x000023aa, +0x00005cf3, +0x00004cc6, +0x0000605e, +0x00006eed, +0x0000512e, -0x00002526,
+    -0x00004c37, +0x00009c70, -0x00005a3f, -0x00003aa9, +0x00005ab4, +0x00009c23, -0x0000ad55, +0x00000839
+};
+
+static const int16_t __attribute__((section(".rodata.tvm"), aligned(16))) kernel_24195235[128] = {
+    +0x007f, -0x0016, +0x003c, -0x0027, +0x0056, +0x0002, +0x0012, -0x0003,
+    -0x0006, +0x001e, -0x0044, -0x007f, +0x0047, -0x0048, +0x007d, -0x002c,
+    +0x005c, +0x007f, -0x0007, -0x0015, -0x0033, -0x0002, +0x0038, -0x0001,
+    +0x0011, -0x0036, +0x0062, +0x0034, +0x007f, +0x0010, -0x001c, -0x0063,
+    -0x001f, +0x0022, +0x0060, -0x0007, +0x0046, -0x0003, +0x0074, -0x007f,
+    -0x000b, +0x000c, +0x000f, +0x0027, +0x001e, +0x007f, -0x0007, +0x000d,
+    -0x0005, +0x0006, -0x0010, +0x007f, +0x002a, -0x0007, +0x001f, +0x0006,
+    -0x0007, -0x0007, +0x0020, -0x007f, -0x0011, +0x0010, -0x0012, +0x0018,
+    +0x0000, -0x002e, -0x004d, +0x0016, +0x0029, -0x0008, -0x0017, -0x007f,
+    -0x001d, +0x007f, +0x000d, +0x0019, +0x0040, +0x001d, +0x0065, -0x0010,
+    +0x0016, -0x0014, -0x0019, -0x0029, -0x000e, -0x007f, -0x0009, -0x001b,
+    -0x007f, -0x0020, -0x000b, -0x0009, -0x000b, -0x0011, +0x0061, -0x0026,
+    +0x001d, -0x0019, +0x0021, +0x007f, -0x001a, -0x0036, +0x0033, +0x004b,
+    -0x0020, +0x0023, +0x007f, +0x0011, +0x0010, +0x0048, +0x0023, +0x002c,
+    -0x006f, -0x003c, +0x0057, +0x0024, -0x0065, -0x0028, -0x007f, -0x0047,
+    -0x000a, +0x0015, -0x000d, -0x0022, -0x002e, -0x000f, +0x007f, -0x000b
+};
+
+#include <arm_acle.h>
+__attribute__((always_inline)) static inline int32_t tensordot_opt_x2_int16_w384_1x8_000_8_1(
+    int32_t *output, int32_t *tensor, int32_t *kernel, int32_t *bias, int32_t *scale
+) {
+  int32_t sum_0 = *bias, sum_1 = *bias;
+
+  int32_t tensor__y00_x00__y00_x01 = tensor[0];
+  int32_t tensor__y00_x02__y00_x03 = tensor[1];
+  int32_t tensor__y00_x04__y00_x05 = tensor[2];
+  int32_t tensor__y00_x06__y00_x07 = tensor[3];
+  int32_t tensor__y00_x08__y00_x09 = tensor[4];
+  int32_t tensor__y00_x0a__y00_x0b = tensor[5];
+  int32_t tensor__y00_x0c__y00_x0d = tensor[6];
+  int32_t tensor__y00_x0e__y00_x0f = tensor[7];
+
+  int32_t kernel__y00_x00__y00_x01 = kernel[0];
+  int32_t kernel__y00_x02__y00_x03 = kernel[1];
+  int32_t kernel__y00_x04__y00_x05 = kernel[2];
+  int32_t kernel__y00_x06__y00_x07 = kernel[3];
+
+  sum_0 = __smlad(tensor__y00_x00__y00_x01, kernel__y00_x00__y00_x01, sum_0);
+  sum_0 = __smlad(tensor__y00_x02__y00_x03, kernel__y00_x02__y00_x03, sum_0);
+  sum_0 = __smlad(tensor__y00_x04__y00_x05, kernel__y00_x04__y00_x05, sum_0);
+  sum_0 = __smlad(tensor__y00_x06__y00_x07, kernel__y00_x06__y00_x07, sum_0);
+  sum_1 = __smlad(tensor__y00_x08__y00_x09, kernel__y00_x00__y00_x01, sum_1);
+  sum_1 = __smlad(tensor__y00_x0a__y00_x0b, kernel__y00_x02__y00_x03, sum_1);
+  sum_1 = __smlad(tensor__y00_x0c__y00_x0d, kernel__y00_x04__y00_x05, sum_1);
+  sum_1 = __smlad(tensor__y00_x0e__y00_x0f, kernel__y00_x06__y00_x07, sum_1);
+
+  int32_t scale_val = *scale;
+  int32_t requant_0 = (sum_0 * (int64_t) scale_val) >> 32;
+  requant_0 = (requant_0 + 1) >> 1;
+  requant_0 = __ssat(requant_0 + -128, 8);
+  int32_t requant_1 = (sum_1 * (int64_t) scale_val) >> 32;
+  requant_1 = (requant_1 + 1) >> 1;
+  requant_1 = __ssat(requant_1 + -128, 8);
+
+  int packed_res_0;
+  __asm__ ("pkhbt %0, %1, %2, lsl #16" : "=r" (packed_res_0) : "r" (requant_0), "r" (requant_1));
+  output[0] = packed_res_0;
+  return 0;
+}
+
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -34054,48 +34126,19 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
   if (conv == NULL) {
     return -1;
   }
-  for (int32_t i1 = 0; i1 < 48; ++i1) {
-    for (int32_t i2 = 0; i2 < 48; ++i2) {
-      for (int32_t i3 = 0; i3 < 8; ++i3) {
-        int32_t cse_var_1 = (((i1 * 384) + (i2 * 8)) + i3);
-        ((int16_t*)PadInput)[cse_var_1] = ((int16_t*)placeholder)[cse_var_1];
-      }
-    }
-  }
   for (int32_t n_oho_fused = 0; n_oho_fused < 12; ++n_oho_fused) {
     for (int32_t owo = 0; owo < 6; ++owo) {
       for (int32_t ohi = 0; ohi < 4; ++ohi) {
         for (int32_t ic = 0; ic < 8; ++ic) {
           int32_t cse_var_2 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[(((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic)] = ((int16_t*)PadInput)[(((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic)];
-        }
-        for (int32_t ic_1 = 0; ic_1 < 8; ++ic_1) {
-          int32_t cse_var_3 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_3 + (owo * 256)) + (ohi * 64)) + ic_1) + 8)] = ((int16_t*)PadInput)[((((cse_var_3 + (ohi * 384)) + (owo * 64)) + ic_1) + 8)];
-        }
-        for (int32_t ic_2 = 0; ic_2 < 8; ++ic_2) {
-          int32_t cse_var_4 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_4 + (owo * 256)) + (ohi * 64)) + ic_2) + 16)] = ((int16_t*)PadInput)[((((cse_var_4 + (ohi * 384)) + (owo * 64)) + ic_2) + 16)];
-        }
-        for (int32_t ic_3 = 0; ic_3 < 8; ++ic_3) {
-          int32_t cse_var_5 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_5 + (owo * 256)) + (ohi * 64)) + ic_3) + 24)] = ((int16_t*)PadInput)[((((cse_var_5 + (ohi * 384)) + (owo * 64)) + ic_3) + 24)];
-        }
-        for (int32_t ic_4 = 0; ic_4 < 8; ++ic_4) {
-          int32_t cse_var_6 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_6 + (owo * 256)) + (ohi * 64)) + ic_4) + 32)] = ((int16_t*)PadInput)[((((cse_var_6 + (ohi * 384)) + (owo * 64)) + ic_4) + 32)];
-        }
-        for (int32_t ic_5 = 0; ic_5 < 8; ++ic_5) {
-          int32_t cse_var_7 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_7 + (owo * 256)) + (ohi * 64)) + ic_5) + 40)] = ((int16_t*)PadInput)[((((cse_var_7 + (ohi * 384)) + (owo * 64)) + ic_5) + 40)];
-        }
-        for (int32_t ic_6 = 0; ic_6 < 8; ++ic_6) {
-          int32_t cse_var_8 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_8 + (owo * 256)) + (ohi * 64)) + ic_6) + 48)] = ((int16_t*)PadInput)[((((cse_var_8 + (ohi * 384)) + (owo * 64)) + ic_6) + 48)];
-        }
-        for (int32_t ic_7 = 0; ic_7 < 8; ++ic_7) {
-          int32_t cse_var_9 = (n_oho_fused * 1536);
-          ((int16_t*)data_vec)[((((cse_var_9 + (owo * 256)) + (ohi * 64)) + ic_7) + 56)] = ((int16_t*)PadInput)[((((cse_var_9 + (ohi * 384)) + (owo * 64)) + ic_7) + 56)];
+          ((int16_t*)data_vec)[(((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic)] = ((int16_t*)placeholder)[(((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 8)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 8)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 16)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 16)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 24)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 24)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 32)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 32)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 40)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 40)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 48)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 48)];
+          ((int16_t*)data_vec)[((((cse_var_2 + (owo * 256)) + (ohi * 64)) + ic) + 56)] = ((int16_t*)placeholder)[((((cse_var_2 + (ohi * 384)) + (owo * 64)) + ic) + 56)];
         }
       }
     }
@@ -34175,18 +34218,16 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           int32_t cse_var_26 = (cse_var_27 + 1);
           int32_t cse_var_25 = (((cse_var_28 + (ax2_outer * 512)) + (ax3_outer * 64)) + (ax2_inner * 2));
           int32_t cse_var_24 = (((cse_var_28 + (ax2_outer * 128)) + (ax2_inner * 16)) + cse_var_27);
-          int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)conv)[cse_var_25]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_11)[cse_var_27])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_12)[cse_var_27]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_13)[cse_var_27]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_14)[cse_var_27])) - 128;
-          int32_t __2 = (__1) < (127) ? (__1) : (127);
-          int8_t __3 = (int8_t)((__2) > (-128) ? (__2) : (-128));
-          int8_t __4 = (int8_t)127;
-          int8_t __5 = (__3) < (__4) ? (__3) : (__4);
-          int8_t __6 = (int8_t)-128;
-          ((int16_t*)T_subtract)[cse_var_24] = (((int16_t)((__5) > (__6) ? (__5) : (__6))) - (int16_t)-128);
-          int32_t __7 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_25 + 1)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_11)[cse_var_26])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_12)[cse_var_26]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_13)[cse_var_26]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_14)[cse_var_26])) - 128;
-          int32_t __8 = (__7) < (127) ? (__7) : (127);
-          int8_t __9 = (int8_t)((__8) > (-128) ? (__8) : (-128));
-          int8_t __10 = (__9) < (__4) ? (__9) : (__4);
-          ((int16_t*)T_subtract)[(cse_var_24 + 1)] = (((int16_t)((__10) > (__6) ? (__10) : (__6))) - (int16_t)-128);
+          int32_t scale_val = ((int32_t*)scale_19774001)[cse_var_27];
+          int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)conv)[cse_var_25]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_11)[cse_var_27])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_12)[cse_var_27]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_13)[cse_var_27]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_14)[cse_var_27]));
+          //int32_t sum_0 = ((int32_t*)conv)[cse_var_25] + ((int32_t*)bias_8643672)[cse_var_27];
+          //int32_t __1 = (sum_0 * (int64_t) scale_val) >> 32;
+          //__1 = (__1 + 1) >> 1;
+          int32_t requant_0 = __ssat(__1 - 128, 8);
+          ((int16_t*)T_subtract)[cse_var_24] = (((int16_t) requant_0) - (int16_t)-128);
+          int32_t __7 = ((int32_t)((((((int64_t)((int32_t*)conv)[(cse_var_25 + 1)]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_11)[cse_var_26])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_12)[cse_var_26]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_13)[cse_var_26]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_14)[cse_var_26]));
+          int32_t requant_1 = __ssat(__7 - 128, 8);
+          ((int16_t*)T_subtract)[(cse_var_24 + 1)] = (((int16_t) requant_1) - (int16_t)-128);
         }
         for (int32_t ax2_inner_1 = 0; ax2_inner_1 < 8; ++ax2_inner_1) {
           int32_t cse_var_33 = (ax0_ax1_outer_fused * 3072);
