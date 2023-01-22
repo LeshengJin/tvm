@@ -30855,15 +30855,8 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
           ((int16_t*)T_subtract)[cse_var_137] = (((int16_t) requant_0) - (int16_t)-128);
 
           int32_t sum_1 = ((int32_t*)conv)[(cse_var_136 + 1)] + ((int32_t*)bias_8070086)[cse_var_138];
-          int32_t __7 = (
-                            (int32_t)(
-                                (
-                                    (
-                                        (sum_1) *
-                                        ((int64_t*)fused_nn_conv2d_add_cast_constant_2)[cse_var_138]
-                                    ) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_3)[cse_var_138]
-                                ) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_4)[cse_var_138])
-                            );
+          int32_t __7 = (sum_1 * (int64_t) scale_val) >> 32;
+          __7 = (__7 + 1) >> 1;
           int32_t requant_1 = __ssat(__7 - 128, 8);
           ((int16_t*)T_subtract)[(cse_var_137 + 1)] = (((int16_t)requant_1) - (int16_t)-128);
         }
