@@ -30932,6 +30932,120 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
   return 0;
 }
 
+static const float __attribute__((section(".rodata.tvm"), aligned(16))) scale_3360883[8] = {
+    0x1.4e5b46p-124, 0x1.a1c562p-123, 0x1.52203ap-125, 0x1.2221a4p-121, 0x1.adb328p-123, 0x1.bd606ep-110, 0x1.58c1ccp-121, 0x1.afdb16p-122
+};
+
+static const int32_t __attribute__((section(".rodata.tvm"), aligned(16))) bias_11590737[8] = {
+    +0x000034d6, +0x000021dd, +0x00004223, +0x00001f3f, +0x0000240d, -0x0000098b, -0x000004fc, -0x000020ce
+};
+
+static const int16_t __attribute__((section(".rodata.tvm"), aligned(16))) kernel_21585151[72] = {
+    -0x004a, -0x0005, -0x004d, +0x006c, +0x007f, +0x0028, +0x002a, +0x002c,
+    -0x005b, -0x0071, +0x0006, -0x0007, +0x004e, +0x002c, -0x001b, +0x007f,
+    +0x0042, -0x0068, -0x0047, -0x001e, -0x000b, +0x0010, +0x004b, -0x0019,
+    +0x007f, +0x0046, -0x0001, -0x001b, -0x0012, -0x0003, +0x0011, -0x0001,
+    -0x0003, -0x0001, +0x007f, -0x002e, -0x0028, -0x0028, +0x0019, +0x0034,
+    +0x0021, -0x003e, +0x0032, +0x007f, -0x0048, -0x0039, +0x0039, +0x0031,
+    +0x0017, -0x007f, +0x0018, +0x0011, +0x0032, -0x0052, +0x0051, +0x0001,
+    +0x002f, -0x0067, -0x007f, +0x000d, +0x0022, -0x0048, +0x004b, +0x0029,
+    +0x0031, -0x001a, -0x000e, -0x007f, +0x0026, -0x0049, -0x003f, +0x003c
+};
+
+__attribute__((always_inline)) static inline int32_t tensordot_opt_x2_int16_w48_3x3_000_1_8(
+    int32_t *output, int32_t *tensor, int32_t *kernel, int32_t *bias, int32_t *scale
+) {
+  int32_t sum_0 = *bias, sum_1 = *bias;
+
+  int32_t tensor__y00_x00__y00_x01 = tensor[0];
+  int32_t tensor__y00_x02__y00_x03 = tensor[1];
+  int32_t tensor__y01_x00__y01_x01 = tensor[24];
+  int32_t tensor__y01_x02__y01_x03 = tensor[25];
+  int32_t tensor__y02_x00__y02_x01 = tensor[48];
+  int32_t tensor__y02_x02__y02_x03 = tensor[49];
+
+  int32_t kernel__y00_x00__y00_x01 = kernel[0];
+  int32_t kernel__y00_x02__y01_x00 = kernel[1];
+  int32_t kernel__y01_x01__y01_x02 = kernel[2];
+  int32_t kernel__y02_x00__y02_x01 = kernel[3];
+  int32_t kernel__y02_x02__unknown = kernel[4];
+
+  sum_0 = __smlad(tensor__y00_x00__y00_x01, kernel__y00_x00__y00_x01, sum_0);
+  sum_0 = __smlabb(tensor__y00_x02__y00_x03, kernel__y00_x02__y01_x00, sum_0);
+  sum_0 = __smlabt(tensor__y01_x00__y01_x01, kernel__y00_x02__y01_x00, sum_0);
+  sum_0 = __smlatb(tensor__y01_x00__y01_x01, kernel__y01_x01__y01_x02, sum_0);
+  sum_0 = __smlabt(tensor__y01_x02__y01_x03, kernel__y01_x01__y01_x02, sum_0);
+  sum_0 = __smlad(tensor__y02_x00__y02_x01, kernel__y02_x00__y02_x01, sum_0);
+  sum_0 = __smlabb(tensor__y02_x02__y02_x03, kernel__y02_x02__unknown, sum_0);
+  sum_1 = __smlatb(tensor__y00_x00__y00_x01, kernel__y00_x00__y00_x01, sum_1);
+  sum_1 = __smlabt(tensor__y00_x02__y00_x03, kernel__y00_x00__y00_x01, sum_1);
+  sum_1 = __smlatb(tensor__y00_x02__y00_x03, kernel__y00_x02__y01_x00, sum_1);
+  sum_1 = __smlatt(tensor__y01_x00__y01_x01, kernel__y00_x02__y01_x00, sum_1);
+  sum_1 = __smlad(tensor__y01_x02__y01_x03, kernel__y01_x01__y01_x02, sum_1);
+  sum_1 = __smlatb(tensor__y02_x00__y02_x01, kernel__y02_x00__y02_x01, sum_1);
+  sum_1 = __smlabt(tensor__y02_x02__y02_x03, kernel__y02_x00__y02_x01, sum_1);
+  sum_1 = __smlatb(tensor__y02_x02__y02_x03, kernel__y02_x02__unknown, sum_1);
+
+  int32_t scale_val = *scale;
+  int32_t requant_0 = (sum_0 * (int64_t) scale_val) >> 32;
+  requant_0 = (requant_0 + 1) >> 1;
+  requant_0 = __ssat(requant_0 + -128, 8);
+  int32_t requant_1 = (sum_1 * (int64_t) scale_val) >> 32;
+  requant_1 = (requant_1 + 1) >> 1;
+  requant_1 = __ssat(requant_1 + -128, 8);
+
+  ((int16_t*) output)[0] = (int16_t) requant_0;
+  ((int16_t*) output)[8] = (int16_t) requant_1;
+  return 0;
+}
+
+__attribute__((always_inline)) static inline int32_t tensordot_opt_x2_int16_w48_3x3_010_1_8(
+    int32_t *output, int32_t *tensor, int32_t *kernel, int32_t *bias, int32_t *scale
+) {
+  int32_t sum_0 = *bias, sum_1 = *bias;
+
+  int32_t tensor__y00_x00__y00_x01 = tensor[0];
+  int32_t tensor__y00_x02__y00_x03 = tensor[1];
+  int32_t tensor__y01_x00__y01_x01 = tensor[24];
+  int32_t tensor__y01_x02__y01_x03 = tensor[25];
+  int32_t tensor__y02_x00__y02_x01 = tensor[48];
+  int32_t tensor__y02_x02__y02_x03 = tensor[49];
+
+  int32_t kernel__unknown__y00_x00 = kernel[0];
+  int32_t kernel__y00_x01__y00_x02 = kernel[1];
+  int32_t kernel__y01_x00__y01_x01 = kernel[2];
+  int32_t kernel__y01_x02__y02_x00 = kernel[3];
+  int32_t kernel__y02_x01__y02_x02 = kernel[4];
+
+  sum_0 = __smlabt(tensor__y00_x00__y00_x01, kernel__unknown__y00_x00, sum_0);
+  sum_0 = __smlatb(tensor__y00_x00__y00_x01, kernel__y00_x01__y00_x02, sum_0);
+  sum_0 = __smlabt(tensor__y00_x02__y00_x03, kernel__y00_x01__y00_x02, sum_0);
+  sum_0 = __smlad(tensor__y01_x00__y01_x01, kernel__y01_x00__y01_x01, sum_0);
+  sum_0 = __smlabb(tensor__y01_x02__y01_x03, kernel__y01_x02__y02_x00, sum_0);
+  sum_0 = __smlabt(tensor__y02_x00__y02_x01, kernel__y01_x02__y02_x00, sum_0);
+  sum_0 = __smlatb(tensor__y02_x00__y02_x01, kernel__y02_x01__y02_x02, sum_0);
+  sum_0 = __smlabt(tensor__y02_x02__y02_x03, kernel__y02_x01__y02_x02, sum_0);
+  sum_1 = __smlatt(tensor__y00_x00__y00_x01, kernel__unknown__y00_x00, sum_1);
+  sum_1 = __smlad(tensor__y00_x02__y00_x03, kernel__y00_x01__y00_x02, sum_1);
+  sum_1 = __smlatb(tensor__y01_x00__y01_x01, kernel__y01_x00__y01_x01, sum_1);
+  sum_1 = __smlabt(tensor__y01_x02__y01_x03, kernel__y01_x00__y01_x01, sum_1);
+  sum_1 = __smlatb(tensor__y01_x02__y01_x03, kernel__y01_x02__y02_x00, sum_1);
+  sum_1 = __smlatt(tensor__y02_x00__y02_x01, kernel__y01_x02__y02_x00, sum_1);
+  sum_1 = __smlad(tensor__y02_x02__y02_x03, kernel__y02_x01__y02_x02, sum_1);
+
+  int32_t scale_val = *scale;
+  int32_t requant_0 = (sum_0 * (int64_t) scale_val) >> 32;
+  requant_0 = (requant_0 + 1) >> 1;
+  requant_0 = __ssat(requant_0 + -128, 8);
+  int32_t requant_1 = (sum_1 * (int64_t) scale_val) >> 32;
+  requant_1 = (requant_1 + 1) >> 1;
+  requant_1 = __ssat(requant_1 + -128, 8);
+
+  ((int16_t*) output)[0] = (int16_t) requant_0;
+  ((int16_t*) output)[8] = (int16_t) requant_1;
+  return 0;
+}
+
 #ifdef __cplusplus
 extern "C"
 #endif
@@ -30991,13 +31105,9 @@ TVM_DLL int32_t tvmgen_default_fused_nn_conv2d_add_cast_multiply_add_right_shift
     for (int32_t ax2_1 = 0; ax2_1 < 48; ++ax2_1) {
       for (int32_t ax3_1 = 0; ax3_1 < 8; ++ax3_1) {
         int32_t cse_var_5 = (((ax1_1 * 384) + (ax2_1 * 8)) + ax3_1);
-        int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)depthwise_conv2d)[cse_var_5]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_6)[ax3_1])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_7)[ax3_1]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_8)[ax3_1]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_9)[ax3_1])) - 128;
-        int32_t __2 = (__1) < (127) ? (__1) : (127);
-        int8_t __3 = (int8_t)((__2) > (-128) ? (__2) : (-128));
-        int8_t __4 = (int8_t)127;
-        int8_t __5 = (__3) < (__4) ? (__3) : (__4);
-        int8_t __6 = (int8_t)-128;
-        ((int16_t*)T_subtract)[cse_var_5] = (((int16_t)((__5) > (__6) ? (__5) : (__6))) - (int16_t)-128);
+        int32_t __1 = ((int32_t)((((((int64_t)((int32_t*)depthwise_conv2d)[cse_var_5]) + ((int64_t)((int32_t*)fused_nn_conv2d_constant_6)[ax3_1])) * ((int64_t*)fused_nn_conv2d_add_cast_constant_7)[ax3_1]) + ((int64_t*)fused_nn_conv2d_add_cast_multiply_constant_8)[ax3_1]) >> ((int64_t*)fused_nn_conv2d_add_cast_multiply_add_constant_9)[ax3_1]));
+        int32_t requant_0 = __ssat(__1 - 128, 8);
+        ((int16_t*)T_subtract)[cse_var_5] = (((int16_t) requant_0) - (int16_t)-128);
       }
     }
   }
