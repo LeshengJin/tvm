@@ -19,7 +19,7 @@
 #include <dlpack/dlpack.h>
 #include <hip/hip_runtime_api.h>
 #include <hip/hip_version.h>
-#include <rccl/rccl.h>
+#include <rccl.h>
 #include <tvm/runtime/registry.h>
 
 #include <mutex>
@@ -56,6 +56,7 @@ struct RCCLGlobalContext {
   void Initialize(std::vector<int> device_ids) {
     DiscoWorker* worker = DiscoWorker::ThreadLocal();
     int num_workers = worker->num_workers;
+    std::cout << num_workers << std::endl;
     CHECK_EQ(device_ids.size(), num_workers)
         << "ValueError: There are " << num_workers << " worker(s), but " << device_ids.size()
         << " device id(s) are provided.";
@@ -66,10 +67,7 @@ struct RCCLGlobalContext {
       std::cout << worker_id << std::endl;
       int device_id = device_ids[worker_id];
       ncclComm_t comm;
-      hipStream_t stream{nullptr};
-      int device_num;
-      // ROCM_CALL(hipGetDeviceCount(&device_num));
-      // std::cout << device_num << std::endl;
+      hipStream_t stream;
       std::cout << "hipSetDevice: " << device_id << std::endl;
       ROCM_CALL(hipSetDevice(device_id));
       std::cout << "hipStreamCreate" << std::endl;
@@ -79,7 +77,9 @@ struct RCCLGlobalContext {
       this->streams.push_back(stream);
       this->communicators.push_back(comm);
     }
+    std::cout << "Before nccl Group End" << std::endl;
     RCCL_CALL(ncclGroupEnd());
+    std::cout << "After nccl Group End" << std::endl;
     this->device_ids = std::move(device_ids);
   }
 
@@ -134,7 +134,7 @@ TVM_REGISTER_GLOBAL("runtime.disco.rccl.init").set_body([](TVMArgs args, TVMRetV
   }
   // Set the `default_device` and `ccl` for the current worker
   DiscoWorker* worker = DiscoWorker::ThreadLocal();
-  worker->default_device = Device{DLDeviceType::kDLCUDA, device_ids[worker->worker_id]};
+  worker->default_device = Device{DLDeviceType::kDLROCM, device_ids[worker->worker_id]};
   worker->ccl = "rccl";
   // Setup global context only once
   static std::once_flag flag;
