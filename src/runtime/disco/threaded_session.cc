@@ -17,23 +17,27 @@
  * under the License.
  */
 #include <dmlc/io.h>
+#include <tvm/runtime/c_runtime_api.h>
+#include <tvm/runtime/object.h>
 
 #include <condition_variable>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <thread>
 #include <utility>
 
-#include "../../support/arena.h"
 #include "../../support/ring_buffer.h"
 #include "../minrpc/rpc_reference.h"
-#include "./session.h"
+#include "./bcast_session.h"
+#include "./protocol.h"
 #include "./worker.h"
 
 namespace tvm {
 namespace runtime {
 
-class ThreadedMessageQueue : public dmlc::Stream {
+class DiscoThreadedMessageQueue : private dmlc::Stream,
+                                  private DiscoProtocol<DiscoThreadedMessageQueue> {
  public:
   void Send(const TVMArgs& args) {
     RPCReference::ReturnPackedSeq(args.values, args.type_codes, args.num_args, this);
@@ -42,10 +46,6 @@ class ThreadedMessageQueue : public dmlc::Stream {
 
   TVMArgs Recv() {
     WaitDequeue();
-    uint64_t packet_nbytes = 0;
-    RPCCode code = RPCCode::kReturn;
-    this->Read(&packet_nbytes);
-    this->Read(&code);
     TVMValue* values = nullptr;
     int* type_codes = nullptr;
     int num_args = 0;
@@ -63,9 +63,16 @@ class ThreadedMessageQueue : public dmlc::Stream {
   }
 
   void WaitDequeue() {
-    std::unique_lock<std::mutex> lock(mutex_);
-    condition_.wait(lock, [this] { return msg_cnt_.load() > 0; });
-    --msg_cnt_;
+    {
+      std::unique_lock<std::mutex> lock(mutex_);
+      condition_.wait(lock, [this] { return msg_cnt_.load() > 0; });
+      --msg_cnt_;
+    }
+    this->RecycleAll();
+    uint64_t packet_nbytes = 0;
+    RPCCode code = RPCCode::kReturn;
+    this->Read(&packet_nbytes);
+    this->Read(&code);
   }
 
   void MessageStart(uint64_t packet_nbytes) {
@@ -73,18 +80,6 @@ class ThreadedMessageQueue : public dmlc::Stream {
     size_t n = ring_buffer_.bytes_available();
     n += packet_nbytes + sizeof(uint64_t);
     this->ring_buffer_.Reserve(n);
-  }
-
-  void MessageDone() {}
-
-  void ThrowError(RPCServerStatus status) {
-    LOG(FATAL) << "InternalError: Unexpected error in RPC: " << RPCServerStatusToString(status);
-  }
-
-  template <typename T>
-  T* ArenaAlloc(int count) {
-    static_assert(std::is_pod<T>::value, "need to be trival");
-    return arena_.template allocate_<T>(count);
   }
 
   size_t Read(void* data, size_t size) final {
@@ -103,13 +98,12 @@ class ThreadedMessageQueue : public dmlc::Stream {
   using dmlc::Stream::Write;
   using dmlc::Stream::WriteArray;
   friend struct RPCReference;
+  friend struct DiscoProtocol<DiscoThreadedMessageQueue>;
 
   std::mutex mutex_;
   std::atomic<int> msg_cnt_{0};
   std::condition_variable condition_;
-
   support::RingBuffer ring_buffer_;
-  support::Arena arena_;
 };
 
 class DiscoThreadChannel final : public DiscoChannel {
@@ -119,64 +113,62 @@ class DiscoThreadChannel final : public DiscoChannel {
   void Reply(const TVMArgs& args) { worker_to_controler_.Send(args); }
   TVMArgs RecvReply() { return worker_to_controler_.Recv(); }
 
-  ThreadedMessageQueue controler_to_worker_;
-  ThreadedMessageQueue worker_to_controler_;
+  DiscoThreadedMessageQueue controler_to_worker_;
+  DiscoThreadedMessageQueue worker_to_controler_;
 };
 
-class ThreadedCommandQueueObj final : public CommandQueueObj {
+DiscoWorkerThread::DiscoWorkerThread(int worker_id, int num_workers,
+                                     WorkerZeroData* worker_zero_data_)
+    : channel(std::make_unique<DiscoThreadChannel>()),
+      worker(
+          std::make_unique<DiscoWorker>(worker_id, num_workers, worker_zero_data_, channel.get())),
+      thread(std::make_unique<std::thread>([worker = this->worker.get()] { worker->MainLoop(); })) {
+}
+
+class ThreadedSessionObj final : public BcastSessionObj {
  public:
-  explicit ThreadedCommandQueueObj(int n_workers) {
-    for (int i = 0; i < n_workers; ++i) {
-      std::shared_ptr<DiscoThreadChannel> channel = std::make_shared<DiscoThreadChannel>();
+  explicit ThreadedSessionObj(int num_workers) {
+    for (int i = 0; i < num_workers; ++i) {
       WorkerZeroData* data = (i == 0) ? &worker_zero_data_ : nullptr;
-      workers_.emplace_back(std::make_unique<DiscoWorker>(i, n_workers, data, channel));
-      channels_.emplace_back(std::move(channel));
-      worker_threads_.emplace_back([worker = workers_.back().get()] { worker->MainLoop(); });
+      workers_.emplace_back(i, num_workers, data);
     }
   }
 
-  ~ThreadedCommandQueueObj() {
-    this->BroadcastUnpacked(DiscoAction::kShutDown, 0);
-    for (std::thread& worker : this->worker_threads_) {
-      worker.join();
-    }
+  ~ThreadedSessionObj() {
+    this->Shutdown();
+    workers_.clear();
   }
-
-  void BroadcastPacked(const TVMArgs& args) final {
-    for (std::shared_ptr<DiscoThreadChannel>& channel : this->channels_) {
-      channel->Send(args);
-    }
-  }
-
-  void AppendHostNDArray(const NDArray& host_array) final {
-    std::lock_guard<std::mutex> lock(worker_zero_data_.queue_mutex_);
-    worker_zero_data_.host_arrays.push(host_array);
-  }
-
-  TVMArgs RecvReplyPacked(int worker_id) final { return channels_[worker_id]->RecvReply(); }
 
   TVMRetValue DebugGetFromRemote(int64_t reg_id, int worker_id) {
     this->SyncWorker(worker_id);
-    return this->workers_.at(worker_id)->register_file.at(reg_id);
+    return this->workers_.at(worker_id).worker->register_file.at(reg_id);
   }
 
-  static constexpr const char* _type_key = "runtime.disco.ThreadedCommandQueue";
-  TVM_DECLARE_FINAL_OBJECT_INFO(ThreadedCommandQueueObj, CommandQueueObj);
+  void DebugSetRegister(int64_t reg_id, TVMArgValue value, int worker_id) {
+    this->SyncWorker(worker_id);
+    this->workers_.at(worker_id).worker->SetRegister(reg_id, value);
+  }
 
- private:
-  std::vector<std::shared_ptr<DiscoThreadChannel>> channels_;
-  std::vector<std::unique_ptr<DiscoWorker>> workers_;
-  std::vector<std::thread> worker_threads_;
-  WorkerZeroData worker_zero_data_;
+  void BroadcastPacked(const TVMArgs& args) final {
+    for (const DiscoWorkerThread& worker : this->workers_) {
+      worker.channel->Send(args);
+    }
+  }
+
+  TVMArgs RecvReplyPacked(int worker_id) final {
+    return this->workers_.at(worker_id).channel->RecvReply();
+  }
+
+  static constexpr const char* _type_key = "runtime.disco.ThreadedSession";
+  TVM_DECLARE_FINAL_OBJECT_INFO(ThreadedSessionObj, SessionObj);
+
+  std::vector<DiscoWorkerThread> workers_;
 };
 
-TVM_REGISTER_OBJECT_TYPE(ThreadedCommandQueueObj);
+TVM_REGISTER_OBJECT_TYPE(ThreadedSessionObj);
 
 Session Session::ThreadedSession(int num_workers) {
-  ObjectPtr<SessionObj> n = make_object<SessionObj>();
-  n->cmd_ = CommandQueue(make_object<ThreadedCommandQueueObj>(num_workers));
-  n->reg_count_ = 1;
-  n->free_regs_.clear();
+  ObjectPtr<ThreadedSessionObj> n = make_object<ThreadedSessionObj>(num_workers);
   return Session(std::move(n));
 }
 

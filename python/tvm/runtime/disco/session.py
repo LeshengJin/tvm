@@ -17,13 +17,17 @@
 """This module defines a Session in Disco. Session is the primary interface that users interact
 with the distributed runtime.
 """
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence, Union
+
+import numpy as np
 
 from ..._ffi import register_object
 from ..._ffi.runtime_ctypes import Device
+from ..container import ShapeTuple
 from ..ndarray import NDArray
+from ..ndarray import array as _as_NDArray
 from ..object import Object
-from . import _ffi_api
+from . import _ffi_api, process_pool  # pylint: disable=unused-import
 
 
 @register_object("runtime.disco.DRef")
@@ -38,7 +42,7 @@ class DRef(Object):
         return _ffi_api.DRefSession(self)  # type: ignore # pylint: disable=no-member
 
     def debug_get_from_remote(self, worker_id: int) -> Any:
-        """Get the value of a DRef from a remote worker.
+        """Get the value of a DRef from a remote worker. It is only used for debugging purposes.
 
         Parameters
         ----------
@@ -51,6 +55,24 @@ class DRef(Object):
             The value of the register.
         """
         return _ffi_api.DRefDebugGetFromRemote(self, worker_id)  # type: ignore # pylint: disable=no-member
+
+    def debug_copy_from(
+        self,
+        worker_id: int,
+        value: Union[np.ndarray, NDArray],
+    ) -> None:
+        """Copy an NDArray value to remote for debugging purposes.
+
+        Parameters
+        ----------
+        worker_id : int
+            The id of the worker to be copied to.
+        value : Union[numpy.ndarray, NDArray]
+            The value to be copied.
+        """
+        if not isinstance(value, NDArray):
+            value = _as_NDArray(value)
+        return _ffi_api.DRefDebugCopyFrom(self, worker_id, value)  # type: ignore # pylint: disable=no-member
 
 
 class DPackedFunc(DRef):
@@ -81,11 +103,6 @@ class Session(Object):
     """A Disco interactive session. It allows users to interact with the Disco command queue with
     various PackedFunc calling convention."""
 
-    @staticmethod
-    def threaded_session(num_workers: int) -> "Session":
-        """Create a threaded session."""
-        return _ffi_api.SessionThreaded(num_workers)  # type: ignore # pylint: disable=no-member
-
     def _get_cached_method(self, name: str) -> Callable:
         if not hasattr(self, "_cache"):
             cache = self._cache = {}  # pylint: disable=attribute-defined-outside-init
@@ -103,7 +120,7 @@ class Session(Object):
         dtype: str,
         device: Optional[Device] = None,
     ) -> DRef:
-        """Create an empty NDArray on all workers.
+        """Create an empty NDArray on all workers and attach them to a DRef.
 
         Parameters
         ----------
@@ -122,7 +139,7 @@ class Session(Object):
         if device is None:
             device = Device(device_type=0, device_id=0)
         func = self._get_cached_method("runtime.disco.empty")
-        return func(*shape, dtype, device)
+        return func(ShapeTuple(shape), dtype, device)
 
     def get_global_func(self, name: str) -> DRef:
         """Get a global function on workers.
@@ -162,30 +179,31 @@ class Session(Object):
         Notes
         -----
         Examples of unsupported types:
-        - NDArray, DLTensor;
-        - TVM Objects, including PackedFunc and Module.
+        - NDArray, DLTensor,;
+        - TVM Objects, including PackedFunc, Module and String.
         """
-        return _ffi_api.SessionCallPacked(self, 0, 0, func, 0, *args)  # type: ignore # pylint: disable=no-member
+        return _ffi_api.SessionCallPacked(self, 0, 0, func, *args)  # type: ignore # pylint: disable=no-member
 
-    def sync_worker(self, worker_id: int = 0) -> None:
+    def _sync_worker(self, worker_id: int) -> None:
         """Synchronize the controller with a worker, and it will wait until the worker finishes
-        executing this instruction.
+        executing all the existing instructions. This function is usually used for worker-0, because
+        it is the only worker that is assumed to collocate with the controller. Syncing with other
+        workers may not be supported and should only be used for debugging purposes.
 
         Parameters
         ----------
         worker_id : int
             The id of the worker to be synced with.
-
-        Notes
-        -----
-        This function is usually used for worker-0, because it is the only worker that is
-        assumed to collocate with the controller. Syncing with other workers may not be supported
-        and should only be used for debugging purposes.
         """
         return _ffi_api.SessionSyncWorker(self, worker_id)  # type: ignore # pylint: disable=no-member
 
+    def sync_worker_0(self) -> None:
+        """Synchronize the controller with worker-0, and it will wait until the worker-0 finishes
+        executing all the existing instructions."""
+        return self._sync_worker(0)
+
     def copy_from_worker_0(self, host_array: NDArray, remote_array: DRef) -> None:
-        """Copy the controller-side NDArray to worker-0.
+        """Copy an NDArray from worker-0 to the controller-side NDArray.
 
         Parameters
         ----------
@@ -197,7 +215,7 @@ class Session(Object):
         return _ffi_api.SessionCopyFromWorker0(self, host_array, remote_array)  # type: ignore # pylint: disable=no-member
 
     def copy_to_worker_0(self, host_array: NDArray, remote_array: DRef) -> None:
-        """Copy an NDArray from worker-0 to the controller-side NDArray.
+        """Copy the controller-side NDArray to worker-0.
 
         Parameters
         ----------
@@ -232,24 +250,23 @@ class Session(Object):
         func = self._get_cached_method("runtime.disco.load_vm_module")
         return DModule(func(path, device))
 
-    def init_ccl(self, api: str, *args):
+    def init_ccl(self, ccl: str, *device_ids):
         """Initialize the underlying communication collective library.
 
         Parameters
         ----------
-        api : str
+        ccl : str
             The name of the communication collective library. Currently supported libraries are:
             - nccl
             - rccl
             - mpi
-        *args : various types
-            The arguments to be passed to the initialization function of the communication
+        *device_ids : int
+            The device IDs to be used by the underlying communication library.
         """
-        assert api in ("nccl", "rccl"), f"Unsupported CCL backend: {api}"
-        func = self.get_global_func(f"runtime.disco.{api}.init")
-        func(*args)
+        assert ccl in ("nccl", "rccl"), f"Unsupported CCL backend: {ccl}"
+        return _ffi_api.SessionInitCCL(self, ccl, ShapeTuple(device_ids))  # type: ignore # pylint: disable=no-member
 
-    def broadcast_from_worker0(self, array: DRef) -> None:
+    def broadcast_from_worker0(self, src: DRef, dst: DRef) -> DRef:
         """Broadcast an array from worker-0 to all other workers.
 
         Parameters
@@ -258,11 +275,38 @@ class Session(Object):
             The array to be broadcasted in-place
         """
         func = self._get_cached_method("runtime.disco.broadcast_from_worker0")
-        return func(array)
+        func(src, dst)
+
+    def scatter_from_worker0(self, from_array: DRef, to_array: DRef) -> None:
+        """Scatter an array from worker-0 to all other workers.
+
+        Parameters
+        ----------
+        from_array : DRef
+            The array to be scattered from.
+        to_array : DRef
+            The array to be scattered to.
+        """
+        func = self._get_cached_method("runtime.disco.scatter_from_worker0")
+        func(from_array, to_array)
+
+    def gather_to_worker0(self, from_array: DRef, to_array: DRef) -> None:
+        """Gather an array from all other workers to worker-0.
+
+        Parameters
+        ----------
+        from_array : DRef
+            The array to be gathered from.
+        to_array : DRef
+            The array to be gathered to.
+        """
+        func = self._get_cached_method("runtime.disco.gather_to_worker0")
+        func(from_array, to_array)
 
     def allreduce(
         self,
-        array: DRef,
+        src: DRef,
+        dst: DRef,
         op: str = "sum",  # pylint: disable=invalid-name
     ) -> DRef:
         """Perform an allreduce operation on an array.
@@ -279,10 +323,35 @@ class Session(Object):
             - "max"
             - "avg"
         """
-        func = self._get_cached_method("runtime.disco.allreduce")
         if op not in REDUCE_OPS:
             raise ValueError(f"Unsupported reduce op: {op}. Available ops are: {REDUCE_OPS.keys()}")
-        return func(array, REDUCE_OPS[op])
+        op = ShapeTuple([REDUCE_OPS[op]])
+        func = self._get_cached_method("runtime.disco.allreduce")
+        func(src, op, dst)
+
+
+@register_object("runtime.disco.ThreadedSession")
+class ThreadedSession(Session):
+    """A Disco session backed by multi-threading."""
+
+    def __init__(self, num_workers: int) -> None:
+        """Create a disco session backed by multiple threads in the same process."""
+        self.__init_handle_by_constructor__(
+            _ffi_api.SessionThreaded,  # type: ignore # pylint: disable=no-member
+            num_workers,
+        )
+
+
+@register_object("runtime.disco.ProcessSession")
+class ProcessSession(Session):
+    """A Disco session backed by pipe-based multi-processing."""
+
+    def __init__(self, num_workers: int) -> None:
+        self.__init_handle_by_constructor__(
+            _ffi_api.SessionProcess,  # type: ignore # pylint: disable=no-member
+            num_workers,
+            "runtime.disco.create_process_pool",
+        )
 
 
 REDUCE_OPS = {

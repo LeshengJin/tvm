@@ -108,7 +108,6 @@ def test_unexpected_ndim_type():
 
 
 def test_unexpected_tir_cast_args():
-
     with pytest.raises(tvm.error.DiagnosticError):
 
         @R.function
@@ -119,7 +118,6 @@ def test_unexpected_tir_cast_args():
 
 
 def test_unexpected_tir_args():
-
     with pytest.raises(tvm.error.DiagnosticError):
 
         @tvm.script.ir_module
@@ -1192,8 +1190,9 @@ def test_empty_tuple():
     _check(foo, bb.get()["foo"])
 
 
-def test_symbolic_shape_computing():
-    # Tensor Case 1
+def test_symbolic_vars_in_tensor_shape_with_usage_first():
+    """First param may use symbolic variable defined in second param"""
+
     @R.function
     def foo(x: R.Tensor(("m + 1",), "float32"), y: R.Tensor(("m", 1), "float32")):
         z = R.add(x, y)
@@ -1209,7 +1208,10 @@ def test_symbolic_shape_computing():
 
     _check(foo, bb.get()["foo"])
 
-    # Tensor Case 2
+
+def test_symbolic_vars_in_tensor_shape_with_definition_first():
+    """Second param may use symbolic variable defined in first param"""
+
     @R.function
     def bar(
         x: R.Tensor(("m",), "float32"), y: R.Tensor(("T.max(m, 20)",), "float32")
@@ -1232,7 +1234,10 @@ def test_symbolic_shape_computing():
 
     _check(bar, bb.get()["bar"])
 
-    # Shape Case
+
+def test_symbolic_vars_in_shape():
+    """Symbolic variable may be defined in R.Shape"""
+
     @R.function
     def baz(x: R.Shape(("m",)), y: R.Tensor(("m * 2",), "float32")):
         m = T.int64()
@@ -1249,7 +1254,36 @@ def test_symbolic_shape_computing():
 
     _check(baz, bb.get()["baz"])
 
-    # Error Case
+
+def test_symbolic_vars_in_prim_value():
+    """Symbolic variable may be defined in R.Prim"""
+
+    @R.function
+    def baz(x: R.Prim(value="m"), y: R.Tensor(("m * 2",), "float32")):
+        m = T.int64()
+        z = R.call_dps_packed("test_intrin", y, R.Tensor((m * 2,), dtype="float32"))
+        return z
+
+    m = tir.Var("m", "int64")
+    x = relax.Var("x", relax.PrimStructInfo(value=m))
+    y = relax.Var("y", relax.TensorStructInfo([m * 2], "float32"))
+    bb = relax.BlockBuilder()
+    with bb.function("baz", (x, y)):
+        z = bb.emit(relax.call_dps_packed("test_intrin", (y), R.Tensor((m * 2,), dtype="float32")))
+        bb.emit_func_output(z)
+
+    _check(baz, bb.get()["baz"])
+
+
+def test_undefined_symbolic_var_raises_error():
+    """An undefined symbolic variable in an error
+
+    A symbolic variables is defined at the first site where it appears
+    as a shape parameter without any modification.  TVMScript does not
+    support solving for a symbolic variable in terms of the argument
+    shape.  That is, this test case raises an error, and will not
+    attempt to define `m` as either `x.shape[0]-1` or `x.shape[1]//2`.
+    """
     with pytest.raises(tvm.error.DiagnosticError):
 
         @R.function
@@ -1661,6 +1695,81 @@ def test_private_function_with_global_symbol_no_module_fail():
 
         # should not execute
         _check(func)
+
+
+def test_macro_hygienic():
+    x = R.prim_value(2)
+
+    @R.macro(hygienic=True)
+    def alloc_and_shape(dtype: str):
+        alloc = R.builtin.alloc_tensor(R.shape([4, 4]), runtime_device_index=x, dtype=dtype)
+        shape = R.shape_of(alloc)
+        return shape
+
+    x = R.prim_value(1)
+
+    @R.function(private=True)
+    def func(z: R.Tensor((4, 4), "float32")):
+        shape = alloc_and_shape(dtype="float32")
+        return shape
+
+    @R.function(private=True)
+    def expect(z: R.Tensor((4, 4), dtype="float32")) -> R.Shape([4, 4]):
+        alloc: R.Tensor((4, 4), dtype="float32") = R.builtin.alloc_tensor(
+            R.shape([4, 4]), R.dtype("float32"), R.prim_value(2)  # Make sure prim_value is 2
+        )
+        shape: R.Shape([4, 4]) = R.shape_of(alloc)
+        shape_1: R.Shape([4, 4]) = shape
+        return shape_1
+
+    _check(func, expect)
+
+
+def test_macro_non_hygienic():
+    global global_x_var  # Lookup doesn't find this variable if it's not global
+
+    global_x_var = R.prim_value(2)
+
+    @R.macro(hygienic=False)
+    def alloc_and_shape(dtype: str):
+        alloc = R.builtin.alloc_tensor(
+            R.shape([4, 4]), runtime_device_index=global_x_var, dtype=dtype
+        )
+        shape = R.shape_of(alloc)
+        return shape
+
+    global_x_var = R.prim_value(1)
+
+    @R.function(private=True)
+    def func(z: R.Tensor((4, 4), "float32")):
+        shape = alloc_and_shape(dtype="float32")
+        return shape
+
+    @R.function(private=True)
+    def expect(z: R.Tensor((4, 4), dtype="float32")) -> R.Shape([4, 4]):
+        alloc: R.Tensor((4, 4), dtype="float32") = R.builtin.alloc_tensor(
+            R.shape([4, 4]), R.dtype("float32"), R.prim_value(1)  # Make sure prim_value is 1
+        )
+        shape: R.Shape([4, 4]) = R.shape_of(alloc)
+        shape_1: R.Shape([4, 4]) = shape
+        return shape_1
+
+    _check(func, expect)
+
+
+def test_macro_no_variable_leak():
+    with pytest.raises(tvm.error.DiagnosticError):
+
+        @R.macro(hygienic=True)
+        def add_two(value):
+            x = value + R.const(1)  # `x` defined in macro
+            y = x + R.const(1)
+            return y
+
+        @R.function(private=True)
+        def func(t: R.Tensor((), "int32")):
+            u = add_two(t)
+            return x  # Should be undefined here
 
 
 if __name__ == "__main__":

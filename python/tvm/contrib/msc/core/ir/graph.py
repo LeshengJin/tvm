@@ -68,6 +68,17 @@ class MSCTensor(Object):
             return int(self.shape[axis])
         return int(_ffi_api.MSCTensorDimAt(self, axis))
 
+    def set_alias(self, alias: str):
+        """Set alis for the tensor
+
+        Parameters
+        -------
+        alias: str
+            The alias.
+        """
+
+        _ffi_api.MSCTensorSetAlias(self, alias)
+
     def equal(self, other: Object) -> bool:
         """A fast method to check if two nodes are same.
 
@@ -99,7 +110,9 @@ class MSCTensor(Object):
             The tensor description in json format.
         """
 
-        return {"name": self.alias, "shape": self.get_shape(), "dtype": self.dtype_name}
+        tensor_des = {"name": self.alias, "shape": self.get_shape(), "dtype": self.dtype_name}
+        tensor_des["layout"] = self.layout.name if self.layout else ""
+        return tensor_des
 
     @property
     def dtype_name(self) -> str:
@@ -124,8 +137,8 @@ class MSCJoint(BaseJoint):
         The index of the node.
     name: string
         The name of the node.
-    master: string
-        The master of the node.
+    shared_ref: string
+        The share reference of the node.
     optype: string
         The optype of the node.
     attrs: dict<string, string>
@@ -142,7 +155,7 @@ class MSCJoint(BaseJoint):
         self,
         index: int,
         name: str,
-        master: str,
+        shared_ref: str,
         optype: str,
         attrs: Dict[str, str],
         inputs: List[Tuple[BaseJoint, int]],
@@ -156,7 +169,7 @@ class MSCJoint(BaseJoint):
             _ffi_api.MSCJoint,
             index,
             name,
-            master,
+            shared_ref,
             optype,
             attrs,
             parents,
@@ -219,6 +232,18 @@ class MSCJoint(BaseJoint):
 
         return _ffi_api.MSCJointGetOutputs(self)
 
+    def get_weights(self) -> Dict[str, MSCTensor]:
+        """Get all the weights.
+
+        Returns
+        -------
+        weights: dict<str, MSCJoint>
+            The weight Tensors.
+        """
+
+        src_weights = _ffi_api.MSCJointGetWeights(self)
+        return {ref: src_weights[ref] for ref in src_weights}
+
     def get_attrs(self) -> Dict[str, str]:
         """Get all the attributes from node
 
@@ -247,6 +272,22 @@ class MSCJoint(BaseJoint):
         """
 
         return self.get_attrs().get(key, default)
+
+    def has_attr(self, key: str) -> bool:
+        """Check if key in attributes
+
+        Parameters
+        -------
+        key: str
+            The key of the attribute.
+
+        Returns
+        -------
+        has_attr: bool
+            Whether the key in the attributes.
+        """
+
+        return bool(_ffi_api.MSCJointHasAttr(self, key))
 
     def equal(self, other: BaseJoint) -> bool:
         """A fast method to check if two nodes are same.
@@ -287,8 +328,8 @@ class WeightJoint(BaseJoint):
         The index of the node.
     name: string
         The name of the node.
-    master: string
-        The master of the node.
+    shared_ref: string
+        The share reference of the node.
     optype: string
         The optype of the node.
     wtype: string
@@ -307,7 +348,7 @@ class WeightJoint(BaseJoint):
         self,
         index: int,
         name: str,
-        master: str,
+        shared_ref: str,
         optype: str,
         wtype: str,
         attrs: Dict[str, str],
@@ -320,7 +361,7 @@ class WeightJoint(BaseJoint):
             _ffi_api.WeightJoint,
             index,
             name,
-            master,
+            shared_ref,
             optype,
             wtype,
             attrs,
@@ -397,13 +438,13 @@ class MSCGraph(BaseGraph):
 
         return _ffi_api.MSCGraphFindTensor(self, name)
 
-    def find_producer(self, name: str) -> MSCJoint:
-        """Find producer by tensor_name.
+    def find_producer(self, ref: Union[str, MSCTensor]) -> MSCJoint:
+        """Find producer by tensor_name or tensor.
 
         Parameters
         ----------
-        name: string
-            The name of the tensor.
+        ref: string or MSCTensor
+            The name of the tensor or tensor.
 
         Returns
         -------
@@ -411,15 +452,17 @@ class MSCGraph(BaseGraph):
             The found prducer.
         """
 
-        return _ffi_api.MSCGraphFindProducer(self, name)
+        if isinstance(ref, MSCTensor):
+            return _ffi_api.MSCGraphFindProducer(self, ref.name)
+        return _ffi_api.MSCGraphFindProducer(self, ref)
 
-    def find_consumers(self, name: str) -> List[MSCJoint]:
-        """Find consumers by tensor_name.
+    def find_consumers(self, ref: Union[str, MSCTensor]) -> List[MSCJoint]:
+        """Find consumers by tensor_name or tensor.
 
         Parameters
         ----------
-        name: string
-            The name of the tensor.
+        ref: string or MSCTensor
+            The name of the tensor or tensor.
 
         Returns
         -------
@@ -427,7 +470,9 @@ class MSCGraph(BaseGraph):
             The found consumers.
         """
 
-        return _ffi_api.MSCGraphFindConsumers(self, name)
+        if isinstance(ref, MSCTensor):
+            return _ffi_api.MSCGraphFindConsumers(self, ref.name)
+        return _ffi_api.MSCGraphFindConsumers(self, ref)
 
     def get_nodes(self) -> Iterable[MSCJoint]:
         """Get all the nodes in the graph.

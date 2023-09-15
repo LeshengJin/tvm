@@ -126,10 +126,14 @@ def test_verify_e2e_translation_gpu(layout, batch_size, image_shape):
 def verify_extracted_tasks(target_str, layout, batch_size, image_shape, module_equality):
     target = Target(target_str)
     relay_mod, params = get_resnet(batch_size, "float32", layout, image_shape)
+    # Parameters can be bound either as part of the `from_relay`
+    # conversion, or as part of the `extract_tasks` method.  However,
+    # they shouldn't be used in both locations, because
+    # `relax.BindParams` validates that there exists an unbound
+    # parameter of the specified name.
     relax_mod = relay_translator.from_relay(
         relay_mod["main"],
         target,
-        params,
         pass_config={
             "relay.backend.use_meta_schedule": True,
             "relay.FuseOps.max_depth": 1,  # Disable relay fusion
@@ -310,6 +314,32 @@ def test_append_op_attrs():
     )
     assert "op_attrs" in relax_mod_with_attrs["concatenate"].attrs
     assert "op_attrs" not in relax_mod_wo_attrs["concatenate"].attrs
+
+
+def test_instruments_support():
+    x = relay.var("x", shape=(10, 16))
+    y = relay.var("y", shape=(10, 16))
+    out = relay.add(x, y)
+    mod = tvm.IRModule.from_expr(out)
+
+    @tvm.instrument.pass_instrument
+    class SampleRunBeforeAfterInstrument:
+        def __init__(self):
+            self.events = []
+
+        def run_before_pass(self, mod, info):
+            self.events.append("run before " + info.name)
+
+        def run_after_pass(self, mod, info):
+            self.events.append("run after " + info.name)
+
+    my_test = SampleRunBeforeAfterInstrument()
+    relax_mod_with_attrs = relay_translator.from_relay(
+        mod["main"], target="llvm", instruments=[my_test]
+    )
+
+    assert "run after " in "".join(my_test.events)
+    assert "run before " in "".join(my_test.events)
 
 
 if __name__ == "__main__":

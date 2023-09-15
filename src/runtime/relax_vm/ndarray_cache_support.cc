@@ -35,12 +35,15 @@
  * runtime builtin provide as in this file.
  */
 #define PICOJSON_USE_INT64
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include "./ndarray_cache_support.h"
 
 #include <picojson.h>
 #include <tvm/runtime/ndarray.h>
 #include <tvm/runtime/registry.h>
 
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -50,6 +53,89 @@
 namespace tvm {
 namespace runtime {
 namespace relax_vm {
+
+NDArrayCacheMetadata::FileRecord::ParamRecord JSONAsParamRecord(const picojson::object& json) {
+  std::vector<ShapeTuple::index_type> shape;
+  {
+    picojson::array shape_json = json.at("shape").get<picojson::array>();
+    shape.reserve(shape_json.size());
+    for (const picojson::value& d : shape_json) {
+      shape.push_back(d.get<int64_t>());
+    }
+  }
+  NDArrayCacheMetadata::FileRecord::ParamRecord result;
+  result.name = json.at("name").get<std::string>();
+  result.dtype = DataType(String2DLDataType(json.at("dtype").get<std::string>()));
+  result.format = json.at("format").get<std::string>();
+  result.nbytes = json.at("nbytes").get<int64_t>();
+  result.byte_offset = json.at("byteOffset").get<int64_t>();
+  result.shape = ShapeTuple(std::move(shape));
+  return result;
+}
+
+NDArrayCacheMetadata::FileRecord JSONAsFileRecord(const picojson::object& json) {
+  picojson::array records = json.at("records").get<picojson::array>();
+  NDArrayCacheMetadata::FileRecord result;
+  result.data_path = json.at("dataPath").get<std::string>();
+  result.format = json.at("format").get<std::string>();
+  result.nbytes = json.at("nbytes").get<int64_t>();
+  result.records.reserve(records.size());
+  for (const picojson::value& item : records) {
+    result.records.push_back(JSONAsParamRecord(item.get<picojson::object>()));
+  }
+  return result;
+}
+
+NDArrayCacheMetadata JSONAsNDArrayCacheMetadata(const picojson::object& json) {
+  picojson::array records = json.at("records").get<picojson::array>();
+  NDArrayCacheMetadata result;
+  result.records.reserve(records.size());
+  for (const picojson::value& item : records) {
+    result.records.push_back(JSONAsFileRecord(item.get<picojson::object>()));
+  }
+  return result;
+}
+
+NDArrayCacheMetadata NDArrayCacheMetadata::LoadFromStr(const std::string& json_str,
+                                                       const std::string& path) {
+  picojson::value json_info;
+  picojson::parse(json_info, json_str);
+  NDArrayCacheMetadata result = JSONAsNDArrayCacheMetadata(json_info.get<picojson::object>());
+  result.path = path;
+  return result;
+}
+
+std::unordered_map<std::string, int> LoadShardInfoFromStr(const std::string& json_str) {
+  picojson::value json_info;
+  picojson::parse(json_info, json_str);
+  picojson::object json_obj = json_info.get<picojson::object>();
+  std::unordered_map<std::string, int> result;
+  for (const auto& kv : json_obj) {
+    std::string name = kv.first;
+    int64_t shard_dim = kv.second.get<int64_t>();
+    result[name] = shard_dim;
+  }
+  return result;
+}
+
+NDArray NDArrayCacheMetadata::FileRecord::ParamRecord::Load(
+    Device device, const std::string* raw_data,
+    std::function<void(NDArray, const void*, int64_t)> f_load) const {
+  NDArray arr = NDArray::Empty(shape, dtype, device);
+  if (dtype == DataType::Float(32) && format == "f32-to-bf16") {
+    // decode bf16 to f32
+    std::vector<uint16_t> buffer(nbytes / 2);
+    std::vector<uint32_t> decoded(nbytes / 2);
+    std::memcpy(buffer.data(), raw_data->data() + byte_offset, nbytes);
+    for (size_t i = 0; i < buffer.size(); ++i) {
+      decoded[i] = static_cast<uint32_t>(buffer[i]) << 16;
+    }
+    f_load(arr, decoded.data(), decoded.size() * sizeof(uint32_t));
+  } else {
+    f_load(arr, raw_data->data() + byte_offset, nbytes);
+  }
+  return arr;
+}
 
 /*!
  * A NDArray cache to store pre-loaded arrays in the system.
@@ -97,17 +183,12 @@ class NDArrayCache {
     DLDevice device{static_cast<DLDeviceType>(device_type), device_id};
     std::string json_str;
     LoadBinaryFromFile(cache_path + "/ndarray-cache.json", &json_str);
-    picojson::value json_info;
-    picojson::parse(json_info, json_str);
-    auto shard_records = json_info.get<picojson::object>()["records"].get<picojson::array>();
-
-    Map<String, NDArray> result;
-    std::string raw_data;
+    NDArrayCacheMetadata metadata = NDArrayCacheMetadata::LoadFromStr(json_str, cache_path);
     Optional<NDArray> staging_buffer;
-
-    auto fcopy_param_from_bytes = [&](NDArray param, void* data, size_t nbytes) {
+    auto fcopy_param_from_bytes = [&](NDArray param, const void* data, size_t nbytes) {
       if (device_type != kDLOpenCL) {
         param.CopyFromBytes(data, nbytes);
+        return;
       }
       // special handle OpenCL
       // OpenCL runtime can create a host side memory mirror
@@ -130,47 +211,16 @@ class NDArrayCache {
       TVMSynchronize(device_type, device_id, nullptr);
     };
 
-    for (auto shard_item : shard_records) {
-      auto shard_rec = shard_item.get<picojson::object>();
-      ICHECK(shard_rec["dataPath"].is<std::string>());
-      std::string data_path = shard_rec["dataPath"].get<std::string>();
-
-      LoadBinaryFromFile(cache_path + "/" + data_path, &raw_data);
-      CHECK_EQ(shard_rec["format"].get<std::string>(), "raw-shard");
-      int64_t raw_nbytes = shard_rec["nbytes"].get<int64_t>();
-      CHECK_EQ(raw_nbytes, raw_data.length())
+    Map<String, NDArray> result;
+    std::string raw_data;
+    for (const auto& shard_rec : metadata.records) {
+      LoadBinaryFromFile(cache_path + "/" + shard_rec.data_path, &raw_data);
+      CHECK_EQ(shard_rec.format, "raw-shard") << "ValueError: Only `raw-shard` format is supported";
+      CHECK_EQ(shard_rec.nbytes, raw_data.length())
           << "ValueError: Parameters are not loaded properly. Please check your parameter shards "
              "and git lfs installation";
-
-      for (auto nd_item : shard_rec["records"].get<picojson::array>()) {
-        auto nd_rec = nd_item.get<picojson::object>();
-        CHECK(nd_rec["name"].is<std::string>());
-        String name = nd_rec["name"].get<std::string>();
-
-        std::vector<int64_t> shape;
-        for (auto value : nd_rec["shape"].get<picojson::array>()) {
-          shape.push_back(value.get<int64_t>());
-        }
-
-        DataType dtype(String2DLDataType(nd_rec["dtype"].get<std::string>()));
-        std::string encode_format = nd_rec["format"].get<std::string>();
-        int64_t offset = nd_rec["byteOffset"].get<int64_t>();
-        int64_t nbytes = nd_rec["nbytes"].get<int64_t>();
-        NDArray arr = NDArray::Empty(ShapeTuple(shape.begin(), shape.end()), dtype, device);
-
-        if (dtype == DataType::Float(32) && encode_format == "f32-to-bf16") {
-          // decode bf16 to f32
-          std::vector<uint16_t> buffer(nbytes / 2);
-          std::vector<uint32_t> decoded(nbytes / 2);
-          std::memcpy(buffer.data(), raw_data.data() + offset, nbytes);
-          for (size_t i = 0; i < buffer.size(); ++i) {
-            decoded[i] = static_cast<uint32_t>(buffer[i]) << 16;
-          }
-          fcopy_param_from_bytes(arr, decoded.data(), decoded.size() * sizeof(uint32_t));
-        } else {
-          fcopy_param_from_bytes(arr, raw_data.data() + offset, nbytes);
-        }
-        Update(name, arr, true);
+      for (const auto& nd_rec : shard_rec.records) {
+        Update(nd_rec.name, nd_rec.Load(device, &raw_data, fcopy_param_from_bytes), true);
       }
     }
   }

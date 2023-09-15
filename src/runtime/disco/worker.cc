@@ -18,9 +18,16 @@
  */
 #include "./worker.h"
 
+#include <tvm/runtime/c_runtime_api.h>
+#include <tvm/runtime/disco/session.h>
+#include <tvm/runtime/packed_func.h>
 #include <tvm/runtime/registry.h>
 
 #include <thread>
+
+#include "../../support/process_id.h"
+#include "./builtin.h"
+#include "./protocol.h"
 
 namespace tvm {
 namespace runtime {
@@ -34,13 +41,29 @@ struct ThreadLocalDiscoWorker {
   }
 };
 
-DiscoWorker* DiscoWorker::ThreadLocal() { return ThreadLocalDiscoWorker::Get()->worker; }
+DiscoWorker* DiscoWorker::ThreadLocal() {
+  DiscoWorker* ret = ThreadLocalDiscoWorker::Get()->worker;
+  CHECK(ret) << "ValueError: The current thread is not a DiscoWorker thread";
+  return ret;
+}
+
+void DiscoWorker::SetRegister(int reg_id, TVMArgValue value) {
+  ICHECK(0 <= reg_id && reg_id < static_cast<int>(register_file.size()));
+  TVMRetValue& rv = register_file.at(reg_id);
+  if (rv.type_code() == kTVMNDArrayHandle && value.type_code() == kTVMNDArrayHandle) {
+    NDArray dst = rv;
+    NDArray src = value;
+    dst.CopyFrom(src);
+  } else {
+    rv = value;
+  }
+}
 
 struct DiscoWorker::Impl {
   static void MainLoop(DiscoWorker* self) {
     ThreadLocalDiscoWorker::Get()->worker = self;
-    LOG(INFO) << "[Thread " << std::this_thread::get_id() << "] Worker #" << self->worker_id
-              << " Launched";
+    LOG(INFO) << "[Worker #" << self->worker_id << "] " << support::GetProcessIdAndThreadIdHeader()
+              << " started";
     while (true) {
       TVMArgs args = self->channel->Recv();
       DiscoAction action = static_cast<DiscoAction>(args[0].operator int());
@@ -60,10 +83,9 @@ struct DiscoWorker::Impl {
         }
         case DiscoAction::kCallPacked: {
           int func_reg_id = args[2];
-          uint64_t is_dref = args[3];
           PackedFunc func = GetReg(self, func_reg_id);
-          CallPacked(self, reg_id, func, is_dref,
-                     TVMArgs(args.values + 4, args.type_codes + 4, args.num_args - 4));
+          CallPacked(self, reg_id, func,
+                     TVMArgs(args.values + 3, args.type_codes + 3, args.num_args - 3));
           break;
         }
         case DiscoAction::kCopyFromWorker0: {
@@ -76,6 +98,17 @@ struct DiscoWorker::Impl {
         }
         case DiscoAction::kSyncWorker: {
           SyncWorker(self, reg_id);
+          break;
+        }
+        case DiscoAction::kDebugGetFromRemote: {
+          int worker_id = args[2];
+          DebugGetFromRemote(self, reg_id, worker_id);
+          break;
+        }
+        case DiscoAction::kDebugSetRegister: {
+          int worker_id = args[2];
+          TVMArgValue value = args[3];
+          DebugSetRegister(self, reg_id, worker_id, value);
           break;
         }
       }
@@ -117,6 +150,7 @@ struct DiscoWorker::Impl {
 
   static void SyncWorker(DiscoWorker* self, int worker_id) {
     if (worker_id == self->worker_id) {
+      ::tvm::runtime::SyncWorker();
       TVMValue values[2];
       int type_codes[2];
       PackArgs(values, type_codes, static_cast<int>(DiscoAction::kSyncWorker), worker_id);
@@ -124,17 +158,41 @@ struct DiscoWorker::Impl {
     }
   }
 
-  static void CallPacked(DiscoWorker* self, int64_t ret_reg_id, PackedFunc func, uint64_t is_dref,
+  static void DebugGetFromRemote(DiscoWorker* self, int reg_id, int worker_id) {
+    if (worker_id == self->worker_id) {
+      TVMRetValue rv = GetReg(self, reg_id);
+      if (rv.type_code() == kTVMNDArrayHandle || rv.type_code() == kTVMObjectHandle) {
+        rv = DiscoDebugObject::Wrap(rv);
+      }
+      TVMValue values[2];
+      int type_codes[2];
+      PackArgs(values, type_codes, static_cast<int>(DiscoAction::kDebugGetFromRemote), rv);
+      self->channel->Reply(TVMArgs(values, type_codes, 2));
+    }
+  }
+
+  static void DebugSetRegister(DiscoWorker* self, int reg_id, int worker_id, TVMArgValue value) {
+    if (worker_id == self->worker_id) {
+      ::tvm::runtime::SyncWorker();
+      self->SetRegister(reg_id, value);
+      TVMValue values[1];
+      int type_codes[1];
+      PackArgs(values, type_codes, static_cast<int>(DiscoAction::kDebugSetRegister));
+      self->channel->Reply(TVMArgs(values, type_codes, 1));
+    }
+  }
+
+  static void CallPacked(DiscoWorker* self, int64_t ret_reg_id, PackedFunc func,
                          const TVMArgs& args) {
     TVMValue* values = const_cast<TVMValue*>(args.values);
     int* type_codes = const_cast<int*>(args.type_codes);
     int num_args = args.num_args;
     TVMArgsSetter setter(values, type_codes);
     for (int i = 0; i < num_args; ++i) {
-      if ((is_dref >> i) & 1) {
-        int64_t reg_id = TVMArgValue(values[i], type_codes[i]).operator int64_t();
-        ICHECK(0 <= reg_id && reg_id <= static_cast<int>(self->register_file.size()));
-        setter(i, GetReg(self, reg_id));
+      TVMArgValue val = TVMArgValue(values[i], type_codes[i]);
+      if (val.IsObjectRef<DRef>()) {
+        DRef dref = val;
+        setter(i, GetReg(self, dref->reg_id));
       }
     }
     TVMRetValue rv;

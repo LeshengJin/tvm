@@ -18,13 +18,14 @@
  */
 /*!
  * \file worker.h
- * \brief This file defines a worker in Disco. A worker can be launched in a separate thread,
- * process or node as long as the channel supports bi-directional communication in-between the
- * worker and the controler.
+ * \brief This file defines a worker in Disco. A worker can be launched in a separate thread or
+ * process as long as the channel supports bi-directional communication in-between the worker and
+ * the controler.
  */
 #ifndef TVM_RUNTIME_DISCO_WORKER_H_
 #define TVM_RUNTIME_DISCO_WORKER_H_
 
+#include <tvm/runtime/disco/session.h>
 #include <tvm/runtime/packed_func.h>
 
 #include <atomic>
@@ -32,87 +33,12 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <thread>
+#include <utility>
 #include <vector>
 
 namespace tvm {
 namespace runtime {
-
-class DiscoWorker;
-
-/*!
- * \brief Controler-to-worker commands.
- * Each command is broadcasted to all workers.
- *
- * Worker-0 is a special worker that is always co-located with the controller process,
- * and thus could conveniently exchange data with the controler in memory.
- */
-enum class DiscoAction : int32_t {
-  kShutDown = 0,
-  kKillReg = 1,
-  kGetGlobalFunc = 2,
-  kCallPacked = 3,
-  kSyncWorker = 4,
-  kCopyFromWorker0 = 5,
-  kCopyToWorker0 = 6,
-};
-
-inline std::string DiscoAction2String(DiscoAction action) {
-  switch (action) {
-    case DiscoAction::kShutDown:
-      return "kShutDown";
-    case DiscoAction::kKillReg:
-      return "kKillReg";
-    case DiscoAction::kGetGlobalFunc:
-      return "kGetGlobalFunc";
-    case DiscoAction::kCallPacked:
-      return "kCallPacked";
-    case DiscoAction::kSyncWorker:
-      return "kSyncWorker";
-    case DiscoAction::kCopyFromWorker0:
-      return "kCopyFromWorker0";
-    case DiscoAction::kCopyToWorker0:
-      return "kCopyToWorker0";
-  }
-  LOG(FATAL) << "ValueError: Unknown DiscoAction: " << static_cast<int>(action);
-}
-
-/*! \brief Possible kinds of allreduce or reduce operations. */
-enum class ReduceKind : int32_t {
-  kSum = 0,
-  kProd = 1,
-  kMin = 2,
-  kMax = 3,
-  kAvg = 4,
-};
-
-inline std::string ReduceKind2String(ReduceKind kind) {
-  switch (kind) {
-    case ReduceKind::kSum:
-      return "kSum";
-    case ReduceKind::kProd:
-      return "kProd";
-    case ReduceKind::kMin:
-      return "kMin";
-    case ReduceKind::kMax:
-      return "kMax";
-    case ReduceKind::kAvg:
-      return "kAvg";
-  }
-  LOG(FATAL) << "ValueError: Unknown ReduceKind: " << static_cast<int>(kind);
-}
-
-/*! \brief A bi-directional channel for controler-worker communication. */
-class DiscoChannel {
- public:
-  /*! \brief Send a packed sequence to the receiver */
-  virtual void Send(const TVMArgs& args) = 0;
-  /*! \brief Receive a packed sequence from worker */
-  virtual TVMArgs Recv() = 0;
-  /*! \brief Reply a packed sequence to the sender */
-  virtual void Reply(const TVMArgs& args) = 0;
-  /*! \brief Receive a reply from the worker */
-  virtual TVMArgs RecvReply() = 0;
-};
 
 /*!
  * \brief A special communication channel between controler and worker-0,
@@ -131,8 +57,8 @@ class WorkerZeroData {
 
 /*!
  * \brief A worker in Disco. It takes a channel to communication with the controler.
- * The worker can be run in a separate thread, process or node as long as the channel
- * supports bi-directional communication in-between.
+ * The worker can be run in a separate thread or process as long as the channel supports
+ * bi-directional communication in-between.
  */
 class DiscoWorker {
  public:
@@ -144,18 +70,20 @@ class DiscoWorker {
    * \param channel The communication channel between the worker and the controler.
    */
   explicit DiscoWorker(int worker_id, int num_workers, WorkerZeroData* worker_zero_data,
-                       std::shared_ptr<DiscoChannel> channel)
+                       DiscoChannel* channel)
       : worker_id(worker_id),
         num_workers(num_workers),
         default_device(Device{DLDeviceType::kDLCPU, 0}),
         worker_zero_data(worker_zero_data),
-        channel(std::move(channel)),
+        channel(channel),
         register_file{} {}
 
   /*! \brief Main loop of the worker */
   void MainLoop();
   /*! \brief Get the worker instance on the current thread */
   static DiscoWorker* ThreadLocal();
+  /*! \brief Set the specific register to a specific value */
+  void SetRegister(int reg_id, TVMArgValue value);
 
   /*! \brief The id of the worker.*/
   int worker_id;
@@ -168,15 +96,59 @@ class DiscoWorker {
   /*!
    * \brief The data shared between worker-0 and the controler. It's a nullptr if
    * the worker is not worker-0.
+   * \note This data structure is owned by the controler.
    */
   WorkerZeroData* worker_zero_data;
-  /*! \brief The communication channel between the worker and the controler. */
-  std::shared_ptr<DiscoChannel> channel;
+  /*!
+   * \brief The communication channel between the worker and the controler.
+   * \note This data structure is owned by the controler.
+   */
+  DiscoChannel* channel;
   /*! \brief The registers in the worker */
   std::vector<TVMRetValue> register_file;
 
   struct Impl;
   friend struct DiscoWorker::Impl;
+};
+
+/*!
+ * \brief A worker thread in Disco, which upon creation, launches a new thread to run the
+ * DiscoWorker.
+ * \sa DiscoWorker
+ */
+class DiscoWorkerThread {
+ public:
+  /*!
+   * \brief Construct a worker thread.
+   * \param worker_id The id of the worker.
+   * \param num_workers The total number of workers.
+   * \param worker_zero_data_ The data shared between worker-0 and the controler. It's a nullptr if
+   * the worker is not worker-0.
+   */
+  explicit DiscoWorkerThread(int worker_id, int num_workers, WorkerZeroData* worker_zero_data_);
+
+  /*! \brief Move constructor. */
+  explicit DiscoWorkerThread(DiscoWorkerThread&& other)
+      : channel(std::move(other.channel)),
+        worker(std::move(other.worker)),
+        thread(std::move(other.thread)) {}
+
+  /*! \brief Copy constructor is disabled */
+  DiscoWorkerThread(const DiscoWorkerThread& other) = delete;
+
+  /*! \brief Destructor that joins the thread before destruction */
+  ~DiscoWorkerThread() {
+    if (this->thread != nullptr) {
+      this->thread->join();
+    }
+  }
+
+  /*! \brief The communication channel between the controler and the worker */
+  std::unique_ptr<DiscoChannel> channel;
+  /*! \brief The worker whose internal state is visible to the controler */
+  std::unique_ptr<DiscoWorker> worker;
+  /*! \brief The thread that runs the worker's main loop. */
+  std::unique_ptr<std::thread> thread;
 };
 
 }  // namespace runtime

@@ -211,18 +211,45 @@ def compute_conv2d_gemm_without_weight_transform(
                 ),
                 name="C_interleaved",
             )
+            # Ensure the padding needed for tensorize does not get removed during tir passes
+            # by adding a dummy reference to the specific padded area of the result
+            zero = (
+                tvm.tir.const(1, C_interleaved.dtype)
+                * C_interleaved[
+                    batches - 1,
+                    M // tile_rows_A,
+                    N_transformed - 1,
+                    idxm(M, tile_rows_A) // 2,
+                    tile_rows_B // 2 - 1,
+                    1,
+                    1,
+                ]
+                - tvm.tir.const(1, C_interleaved.dtype)
+                * C_interleaved[
+                    batches - 1,
+                    M // tile_rows_A,
+                    N_transformed - 1,
+                    idxm(M, tile_rows_A) // 2,
+                    tile_rows_B // 2 - 1,
+                    1,
+                    1,
+                ]
+            )
             # Unpack the result
             C = te.compute(
                 (batches, M, N),
-                lambda b, x, y: C_interleaved[
-                    b,
-                    x // tile_rows_A,
-                    y // tile_rows_B,
-                    idxm(x, tile_rows_A) // 2,
-                    idxm(y, tile_rows_B) // 2,
-                    idxm(idxm(x, tile_rows_A), 2),
-                    idxm(idxm(y, tile_rows_B), 2),
-                ].astype(out_dtype),
+                lambda b, x, y: (
+                    C_interleaved[
+                        b,
+                        x // tile_rows_A,
+                        y // tile_rows_B,
+                        idxm(x, tile_rows_A) // 2,
+                        idxm(y, tile_rows_B) // 2,
+                        idxm(idxm(x, tile_rows_A), 2),
+                        idxm(idxm(y, tile_rows_B), 2),
+                    ]
+                    + zero
+                ).astype(out_dtype),
                 name="C",
             )
         else:
@@ -299,7 +326,12 @@ def schedule_conv2d_gemm_interleaved(cfg, s, out, final_out):
 
     b, m, n = data_im2col.op.axis
     if data_im2col.op.name == "data_im2col":
-        n_outer, n_inner = s[data_im2col].split(n, 16)
+        n_size = data_im2col.shape[2]
+        if n_size % 16 == 0:
+            split_factor = 16
+        else:
+            split_factor = 8
+        n_outer, n_inner = s[data_im2col].split(n, split_factor)
         s[data_im2col].unroll(n_outer)
         s[data_im2col].vectorize(n_inner)
         b_m_fused = s[data_im2col].fuse(b, m)

@@ -268,7 +268,7 @@ class Schedule(Object):
         """
         return _ffi_api.ScheduleForkSeed(self)  # type: ignore # pylint: disable=no-member
 
-    def show(self, style: Optional[str] = None, black_format: bool = True) -> None:
+    def show(self, style: Optional[str] = None, black_format: bool = False) -> None:
         """A sugar for print highlighted TVM script.
 
         Parameters
@@ -280,7 +280,7 @@ class Schedule(Object):
 
         black_format: bool
 
-            If true (default), use the formatter Black to format the TVMScript
+            If true, use the formatter Black to format the TVMScript
         """
         mod = self.mod
         if mod is not None:
@@ -1617,7 +1617,7 @@ class Schedule(Object):
         storage_scope: str,
     ) -> List[BlockRV]:
         """Create blocks that reads & write a buffer region into a cache block.
-        It requires the the target block both read & write the target buffer.
+        It requires the target block both read & write the target buffer.
         Mainly for inplace operation.
 
         Parameters

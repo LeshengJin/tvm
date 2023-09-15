@@ -16,12 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#ifndef TVM_RUNTIME_DISCO_UTILS_H
-#define TVM_RUNTIME_DISCO_UTILS_H
+#ifndef TVM_RUNTIME_DISCO_UTILS_H_
+#define TVM_RUNTIME_DISCO_UTILS_H_
 
 #include <dlpack/dlpack.h>
+#include <tvm/runtime/disco/session.h>
 
-#include "./session.h"
+#include <string>
+
 #include "./worker.h"
 
 namespace tvm {
@@ -34,44 +36,44 @@ inline Device UseDefaultDeviceIfNone(Device device) {
   return device;
 }
 
-inline std::string DLDeviceType2Str(DLDeviceType ty) {
-  switch (ty) {
-    case DLDeviceType::kDLCPU:
-      return "cpu";
-    case DLDeviceType::kDLCUDA:
-      return "cuda";
-    case DLDeviceType::kDLCUDAHost:
-      return "cuda-host";
-    case DLDeviceType::kDLOpenCL:
-      return "opencl";
-    case DLDeviceType::kDLVulkan:
-      return "vulkan";
-    case DLDeviceType::kDLMetal:
-      return "metal";
-    case DLDeviceType::kDLVPI:
-      return "vpi";
-    case DLDeviceType::kDLROCM:
-      return "rocm";
-    case DLDeviceType::kDLROCMHost:
-      return "rocm-host";
-    case DLDeviceType::kDLCUDAManaged:
-      return "cuda-managed";
-    case DLDeviceType::kDLOneAPI:
-      return "oneapi";
-    case DLDeviceType::kDLWebGPU:
-      return "webgpu";
-    case DLDeviceType::kDLHexagon:
-      return "hexagon";
-    default:
-      return "Device(" + std::to_string(ty) + ")";
+/*!
+ * \brief Possible kinds of reduction operations.
+ */
+enum class ReduceKind : int32_t {
+  kSum = 0,
+  kProd = 1,
+  kMin = 2,
+  kMax = 3,
+  kAvg = 4,
+};
+
+/*! \brief Converts `ReduceKind` to string */
+inline std::string ReduceKind2String(ReduceKind kind) {
+  switch (kind) {
+    case ReduceKind::kSum:
+      return "kSum";
+    case ReduceKind::kProd:
+      return "kProd";
+    case ReduceKind::kMin:
+      return "kMin";
+    case ReduceKind::kMax:
+      return "kMax";
+    case ReduceKind::kAvg:
+      return "kAvg";
   }
-  throw;
+  LOG(FATAL) << "ValueError: Unknown ReduceKind: " << static_cast<int>(kind);
 }
 
-inline std::string Device2String(Device device) {
-  return DLDeviceType2Str(device.device_type) + ":" + std::to_string(device.device_id);
+/*!
+ * \brief Converts a 1-d shape tuple to an integer.
+ * \note At the time of scaffolding Disco, RelaxVM has not provided mature support for standalone
+ * integers. A common workaround is to use a 1-d shape tuple as an integer.
+ */
+inline int64_t IntegerFromShapeTuple(const ShapeTuple& shape) {
+  CHECK_EQ(shape.size(), 1) << "ValueError: shape tuple must be 1-d to be converted to integer.";
+  return shape[0];
 }
 
 }  // namespace runtime
 }  // namespace tvm
-#endif  // TVM_RUNTIME_DISCO_UTILS_H
+#endif  // TVM_RUNTIME_DISCO_UTILS_H_

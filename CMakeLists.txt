@@ -54,6 +54,7 @@ tvm_option(USE_HEXAGON_EXTERNAL_LIBS "Path to git repo containing external Hexag
 tvm_option(USE_RPC "Build with RPC" ON)
 tvm_option(USE_THREADS "Build with thread support" ON)
 tvm_option(USE_LLVM "Build with LLVM, can be set to specific llvm-config path" OFF)
+tvm_option(USE_MLIR "Build with MLIR support" OFF)
 tvm_option(USE_STACKVM_RUNTIME "Include stackvm into the runtime" OFF)
 tvm_option(USE_GRAPH_EXECUTOR "Build with tiny graph executor" ON)
 tvm_option(USE_GRAPH_EXECUTOR_CUDA_GRAPH "Build with tiny graph executor with CUDA Graph for GPUs" OFF)
@@ -727,7 +728,23 @@ if(GTEST_FOUND)
   # include runtime files for unit testing
   target_link_libraries(cpptest PRIVATE ${TVM_TEST_LIBRARY_NAME} GTest::GTest GTest::Main GTest::gmock pthread dl)
   if(DEFINED LLVM_LIBS)
-    target_link_libraries(cpptest PRIVATE ${LLVM_LIBS})
+    # The TVM library is linked with LLVM libraries. If the LLVM libraries are
+    # static and the symbols are not hidden, then don't link them again into
+    # cpptest since cpptest is itself linked against the TVM library. If static
+    # LLVM libraries are linked in twice, it can cause issues with global
+    # variable initialization (cl::opt).
+    # If the LLVM libraries are dynamic, we have to link them again, since the
+    # TVM library will not contain any LLVM definitions.
+    unset(LLVM_SO)
+    foreach(L IN LISTS LLVM_LIBS)
+      if(L MATCHES "libLLVM.*\.so")
+        set(LLVM_SO TRUE)
+        break()
+      endif()
+    endforeach()
+    if(DEFINED LLVM_SO OR HIDE_PRIVATE_SYMBOLS)
+      target_link_libraries(cpptest PRIVATE ${LLVM_LIBS})
+    endif()
   endif()
   if(DEFINED ETHOSN_RUNTIME_LIBRARY)
     target_link_libraries(cpptest PRIVATE ${ETHOSN_RUNTIME_LIBRARY})
@@ -873,6 +890,11 @@ endif()
 if(USE_CUDA AND USE_NCCL)
   target_link_libraries(tvm_runtime PRIVATE nccl)
   target_link_libraries(tvm PRIVATE nccl)
+endif()
+
+if(USE_CUDA AND USE_NCCL)
+  target_link_libraries(tvm PRIVATE nccl)
+  target_link_libraries(tvm_runtime PRIVATE nccl)
 endif()
 
 if(USE_ROCM AND USE_RCCL)
