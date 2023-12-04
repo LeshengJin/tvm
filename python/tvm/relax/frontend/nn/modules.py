@@ -129,12 +129,18 @@ class Linear(Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
+        self.dtype = dtype
         self.out_dtype = out_dtype
         self.weight = Parameter((out_features, in_features), dtype)
         if bias:
-            self.bias = Parameter((out_features,), dtype)
+            self.bias = Parameter((out_features,), dtype if out_dtype is None else out_dtype)
         else:
             self.bias = None
+
+    def to(self, dtype: Optional[str] = None):
+        self.weight.to(dtype)
+        if self.out_dtype is None:
+            self.bias.to(dtype)
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -394,7 +400,7 @@ class ConvTranspose1D(Module):
         )
 
 
-class LayerNorm(Module):
+class LayerNorm2(Module):
     """
     Module for Layer Normalization
     """
@@ -438,6 +444,61 @@ class LayerNorm(Module):
             bias=self.bias,
             eps=self.eps,
         )
+
+
+class LayerNorm(Module):
+    """
+    Module for Layer Normalization
+    """
+
+    def __init__(
+        self,
+        normalized_shape: int,
+        eps: Optional[float] = 1e-5,
+        elementwise_affine: bool = True,
+        dtype: Optional[str] = None,
+    ) -> None:
+        super().__init__()
+        self.normalized_shape = normalized_shape
+        self.eps = eps
+        self.elementwise_affine = elementwise_affine
+        if self.elementwise_affine:
+            self.weight = Parameter((normalized_shape,), dtype="float32")
+            self.bias = Parameter((normalized_shape,), dtype="float32")
+        else:
+            self.weight = None
+            self.bias = None
+
+    def to(self, dtype: Optional[str] = None):
+        pass
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Forward method for layer normalization layer.
+
+        Parameters
+        ----------
+        x : Tensor
+            The input tensor.
+
+        Returns
+        -------
+        ret : Tensor
+            The output tensor for the layer normalization layer.
+        """
+        org_dtype = x.dtype
+        if x.dtype != "float32":
+            x = x.astype("float32")
+        result = op.layer_norm(
+            x,
+            normalized_shape=self.normalized_shape,
+            weight=self.weight,
+            bias=self.bias,
+            eps=self.eps,
+        )
+        if result.dtype != org_dtype:
+            result = result.astype(org_dtype)
+        return result
 
 
 class RMSNorm(Module):

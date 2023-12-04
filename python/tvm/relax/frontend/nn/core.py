@@ -373,6 +373,8 @@ class Module(SubroutineMixin):
                 item.to(dtype=dtype)
         if dtype is not None and isinstance(getattr(self, "dtype", None), str):
             self.dtype = dtype  # pylint: disable=attribute-defined-outside-init
+        # if dtype is not None and getattr(self, "dtype", None) is None:
+        #     self.dtype = dtype
 
     def export_tvm(
         self,
