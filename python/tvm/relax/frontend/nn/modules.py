@@ -133,7 +133,9 @@ class Linear(Module):
         # w: [in_features, out_features]
         w = op.permute_dims(self.weight)
         # x: [*B, out_features]
+        # self.out_dtype = "float32"
         x = op.matmul(x, w, out_dtype=self.out_dtype)
+        # x = x.astype("float16")
         if self.bias is not None:
             x = x + self.bias
         return x
@@ -839,6 +841,7 @@ class Attention(Module):
             hidden_states = self.group_norm(hidden_states, channel_axis=2, axes=[1])
 
         query = self.to_q(hidden_states)
+        # 0.0097
         if encoder_hidden_states is None:
             encoder_hidden_states = hidden_states
 
@@ -854,6 +857,7 @@ class Attention(Module):
 
         # Return to proper shape.
         hidden_states = op.reshape(hidden_states, (0, -1, self.heads * head_dim))
+        # return hidden_states
 
         # Linear projection
         hidden_states = self.to_out[0](hidden_states)

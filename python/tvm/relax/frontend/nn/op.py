@@ -412,7 +412,9 @@ def conv2d(
         padding=padding,
         dilation=dilation,
         groups=groups,
+        # out_dtype="float32",
     )
+    # conv_out = _op.astype(conv_out, "float16")
     if bias is not None:
         conv_out = _op.add(conv_out, _op.reshape(bias._expr, [1, -1, 1, 1]))
 
